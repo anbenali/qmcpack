@@ -138,11 +138,12 @@ bool AtomicBasisBuilder<RFB>::putH5(hdf_archive &hin)
       hin.read(basisName,"name");
   }
   myComm->bcast(sph);
+  myComm->bcast(Morder);
   myComm->bcast(CenterID);
   myComm->bcast(Normalized);
   myComm->bcast(basisName);
 
-  app_log()<<"<input node=\"atomicBasisSet\" name=\""<<basisName<<"\"  angular=\""<<sph<<"\"  elementType=\""<<CenterID<<"\"  normalized=\""<<Normalized<<"\"/>"<<std::endl;
+  app_log()<<"<input node=\"atomicBasisSet\" name=\""<<basisName<<"\" Morder=\""<<Morder<<"\" angular=\""<<sph<<"\"  elementType=\""<<CenterID<<"\"  normalized=\""<<Normalized<<"\"/>"<<std::endl;
   bool tmp_addsignforM=addsignforM;
   if(sph == "spherical")
     addsignforM=1; //include (-1)^m
@@ -166,7 +167,7 @@ bool AtomicBasisBuilder<RFB>::putH5(hdf_archive &hin)
       APP_ABORT(" Error: expandYlm='pwscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
-  if(sph == "cartesia" || Morder == "Gamess")
+  if(sph == "cartesian" || Morder == "Gamess")
   {
     expandlm = CARTESIAN_EXPAND;
     addsignforM=0;
