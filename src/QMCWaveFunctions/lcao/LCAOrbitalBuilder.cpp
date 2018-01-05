@@ -27,6 +27,8 @@
 #include "QMCWaveFunctions/lcao/AOBasisBuilder.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/lcao/MultiFunctorBuilder.h"
+#include "io/hdf_archive.h"
+#include "Message/CommOperators.h"
 #include "Utilities/ProgressReportEngine.h"
 
 namespace qmcplusplus
@@ -106,6 +108,7 @@ namespace qmcplusplus
     std::string keyOpt("NMO"); // Numerical Molecular Orbital
     std::string transformOpt("yes"); // Numerical Molecular Orbital
     std::string cuspC("no");  // cusp correction
+    std::string h5_path(""); //Path to HDF5 Wavefunction
     cuspInfo="";
     //std::string cuspInfo("");  // file with precalculated cusp correction info
     OhmmsAttributeSet aAttrib;
@@ -114,6 +117,8 @@ namespace qmcplusplus
     aAttrib.add(transformOpt,"transform");
     aAttrib.add(cuspC,"cuspCorrection");
     aAttrib.add(cuspInfo,"cuspInfo");
+    aAttrib.add(h5_path,"href");
+
     if(cur != NULL) aAttrib.put(cur);
     
     radialOrbType=-1;
@@ -139,7 +144,7 @@ namespace qmcplusplus
     if(myBasisSet != nullptr) return true;
 
     ReportEngine PRE(ClassName,"put(xmlNodePtr)");
-
+    std::cout<<"YOLOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO"<<std::endl;
     if(!is_same(cur->name,"basisset"))
     {//heck to handle things like <sposet_builder>
       xmlNodePtr cur1= cur->xmlChildrenNode;
