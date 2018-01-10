@@ -9,6 +9,7 @@
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
+//	              Anouar Benali, benali@anl.gov, Argonne National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -582,26 +583,28 @@ int AtomicBasisBuilder<RFB>::expandYlmH5(const std::string& rnl, const QuantumNu
   else
   {
        //assign the index for real Spherical Harmonic with (l,m)
-        aos->LM[num] = aos->Ylm.index(nlms[q_l],nlms[q_m]);
+       // aos->LM[num] = aos->Ylm.index(nlms[q_l],nlms[q_m]);
         //radial orbitals: add only distinct orbitals
-        std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
-        if(rnl_it == RnlID.end())
-        {
-          int nl = aos->Rnl.size();
-          if(radFuncBuilder.addRadialOrbitalH5(hin,nlms))
-            //assign the index for radial orbital with (n,l)
-          {
-            aos->NL[num] = nl;
-            RnlID[rnl] = nl;
-          }
-        }
-        else
-        {
-          //assign the index for radial orbital with (n,l) if repeated
-          aos->NL[num] = (*rnl_it).second;
-        }
-        //increment number of basis functions
-        num++;
+       // std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
+       // if(rnl_it == RnlID.end())
+       // {
+       //   int nl = aos->Rnl.size();
+       //   if(radFuncBuilder.addRadialOrbitalH5(hin,nlms))
+       //     //assign the index for radial orbital with (n,l)
+       //   {
+       //     aos->NL[num] = nl;
+       //     RnlID[rnl] = nl;
+       //   }
+       // }
+       // else
+       // {
+       //   //assign the index for radial orbital with (n,l) if repeated
+       //   aos->NL[num] = (*rnl_it).second;
+       // }
+       // //increment number of basis functions
+       // num++;
+      APP_ABORT(" Error: expandYlm='pwscf'  with angular='spherical' And HDF5 not implemented in AOS version of the code. Aborting.\n");
+       
 
   }
   return num;

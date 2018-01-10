@@ -1705,8 +1705,9 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
   std::string fname = Title+".wf"+WFS_name+".xml";
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
-  if (numMO*SizeOfBasisSet>=4000 && (!UseHDF5||AllH5))
-     std::cout<<"Consider using HDF5 via -hdf5 for higher performance and smaller wavefunction files"<<std::endl;
+  if (numMO*SizeOfBasisSet>=4000 && !UseHDF5)
+     if  (!AllH5)
+        std::cout<<"Consider using HDF5 via -hdf5 for higher performance and smaller wavefunction files"<<std::endl;
 }
 
 void QMCGaussianParserBase::dumpStdInputProd(const std::string& psi_tag,
