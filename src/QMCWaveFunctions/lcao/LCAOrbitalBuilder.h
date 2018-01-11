@@ -64,7 +64,7 @@ namespace qmcplusplus
      * Use ao_traits<T,I,J> to match (ROT)x(SH) combo
      */
     template<int I, int J> BasisSet_t* createBasisSet(xmlNodePtr cur);
-    template<int I, int J> BasisSet_t* createBasisSetH5(xmlNodePtr cur);
+    template<int I, int J> BasisSet_t* createBasisSetH5();
 
   };
 }
