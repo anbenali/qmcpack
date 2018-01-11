@@ -100,7 +100,7 @@ namespace qmcplusplus
 
 
   LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, xmlNodePtr cur) 
-    : targetPtcl(els), sourcePtcl(ions), myBasisSet(nullptr)
+    : targetPtcl(els), sourcePtcl(ions), myBasisSet(nullptr),h5_path("")
   {
     ClassName="LCAOrbitalBuilder";
     ReportEngine PRE(ClassName,"createBasisSet");
@@ -108,7 +108,7 @@ namespace qmcplusplus
     std::string keyOpt("NMO"); // Numerical Molecular Orbital
     std::string transformOpt("yes"); // Numerical Molecular Orbital
     std::string cuspC("no");  // cusp correction
-    std::string h5_path(""); //Path to HDF5 Wavefunction
+
     cuspInfo="";
     //std::string cuspInfo("");  // file with precalculated cusp correction info
     OhmmsAttributeSet aAttrib;
@@ -142,9 +142,20 @@ namespace qmcplusplus
   bool LCAOrbitalBuilder::put(xmlNodePtr cur)
   {
     if(myBasisSet != nullptr) return true;
+    if(h5_path=="")
+        putXML(cur);
+    else
+        putH5();
+ 
+    return true;
+  }
+
+
+  bool LCAOrbitalBuilder::putXML(xmlNodePtr cur)
+  {
+    //if(myBasisSet != nullptr) return true;
 
     ReportEngine PRE(ClassName,"put(xmlNodePtr)");
-    std::cout<<"YOLOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO"<<std::endl;
     if(!is_same(cur->name,"basisset"))
     {//heck to handle things like <sposet_builder>
       xmlNodePtr cur1= cur->xmlChildrenNode;
@@ -203,6 +214,75 @@ namespace qmcplusplus
     }
     return true;
   }
+
+  bool LCAOrbitalBuilder::putH5()
+  {
+
+    std::cout<<"YIIIIHAAAAA"<<std::endl;
+
+    ReportEngine PRE(ClassName,"putH5()");
+    if(!is_same(cur->name,"basisset"))
+    {//heck to handle things like <sposet_builder>
+      xmlNodePtr cur1= cur->xmlChildrenNode;
+      while(cur1!=NULL)
+      {
+        if(is_same(cur1->name,"basisset")) cur=cur1;
+        cur1=cur1->next;
+      }
+    }
+
+    int ylm=-1;
+    {
+      xmlNodePtr cur1= cur->xmlChildrenNode;
+      while(cur1!=NULL && ylm<0)
+      {
+        if(is_same(cur1->name,"atomicBasisSet"))
+        {
+          std::string sph;
+          OhmmsAttributeSet att;
+          att.add(sph,"angular");
+          att.put(cur1);
+          ylm=(sph=="cartesian")?0:1;
+        }
+        cur1=cur1->next;
+      }
+    }
+
+    if(ylm<0)
+      PRE.error("Missing angular attribute of atomicBasisSet.",true);
+
+
+    /** process atomicBasisSet per ion species */
+    switch(radialOrbType)
+    {
+      case(0): //numerical
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiQuintic,"<<ylm<<">" << std::endl;;
+        if(ylm) 
+          myBasisSet=createBasisSet<0,1>(cur);
+        else
+          myBasisSet=createBasisSet<0,0>(cur);
+        break;
+      case(1): //gto
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiGTO,"<<ylm<<">" << std::endl;;
+        if(ylm) 
+          myBasisSet=createBasisSet<1,1>(cur);
+        else
+          myBasisSet=createBasisSet<1,0>(cur);
+        break;
+      case(2): //sto
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiSTO,"<<ylm<<">" << std::endl;;
+        myBasisSet=createBasisSet<2,1>(cur);
+        break;
+      default:
+        PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.",true);
+        break;
+    }
+    return true;
+
+
+  }
+
+
 
   template<int I, int J>
    LCAOrbitalBuilder::BasisSet_t*

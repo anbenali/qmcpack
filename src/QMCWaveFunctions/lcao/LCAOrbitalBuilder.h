@@ -41,6 +41,8 @@ namespace qmcplusplus
     LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, xmlNodePtr cur);
     ~LCAOrbitalBuilder();
     bool put(xmlNodePtr cur);
+    bool putXML(xmlNodePtr cur);
+    bool putH5();
     SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
 
     private:
@@ -55,6 +57,7 @@ namespace qmcplusplus
     int radialOrbType;
     bool cuspCorr;
     std::string cuspInfo;
+    std::string h5_path; //Path to HDF5 Wavefunction
 
     /** create basis set
      *
