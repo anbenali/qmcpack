@@ -299,7 +299,7 @@ namespace qmcplusplus
     std::map<std::string,BasisSetBuilder*> aoBuilders;
 
     /** process atomicBasisSet per ion species */
-
+    cur = cur->xmlChildrenNode;
     while(cur!=NULL) //loop over unique ioons
     {
       std::string cname((const char*)(cur->name));
