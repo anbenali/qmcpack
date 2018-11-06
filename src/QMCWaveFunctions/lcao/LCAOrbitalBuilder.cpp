@@ -526,21 +526,23 @@ namespace qmcplusplus
     loadMO(*lcos, cur);
 
     if (doCuspCorrection) {
-      if (cusp_file == "") {
-          APP_ABORT("cusp file required for now");
-      }
-
       int num_centers = sourcePtcl.getTotalNum();
 
       // Sometimes sposet attribute is 'name' and sometimes it is 'id'
       if (id == "") id = spo_name;
 
       int orbital_set_size = lcos->OrbitalSetSize;
-
       Matrix<CuspCorrectionParameters> info(num_centers, orbital_set_size);
-      bool okay = readCuspInfo(cusp_file, id, orbital_set_size, info);
-      if (!okay) {
-          APP_ABORT("failure in reading cusp info file");
+
+      if (cusp_file == "") {
+          APP_ABORT("cusp file required for now");
+          // Generate correction parameters
+          //generateCuspInfo(orbital_set_size, info);
+      } else {
+        bool okay = readCuspInfo(cusp_file, id, orbital_set_size, info);
+        if (!okay) {
+            APP_ABORT("failure in reading cusp info file");
+        }
       }
 
       createCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);

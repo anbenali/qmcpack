@@ -167,9 +167,10 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   Vector<double> rad_orb;
   int ngrid = 10;
   xgrid.resize(ngrid);
+  double dx = 0.12/ngrid;
   for (int i = 0; i < ngrid; i++)
   {
-    xgrid[i] = 0.012 * (i + 1);
+    xgrid[i] = dx * (i + 1);
   }
 
   rad_orb.resize(ngrid);
@@ -574,7 +575,335 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   REQUIRE(all_grad[0][11][1] == Approx(0.9883840215));
   REQUIRE(all_grad[0][11][2] == Approx(1.7863218842));
   REQUIRE(all_lap[0][11] == Approx(-33.5202249813));
+
+  SPOSetBuilderFactory::clear();
 }
+
+TEST_CASE("CuspCorrection He", "[wavefunction]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  Communicate *c = OHMMS::Controller;
+
+  ParticleSet elec;
+  std::vector<int> agroup(2);
+  agroup[0] = 1;
+  agroup[1] = 1;
+  elec.setName("e");
+  elec.create(agroup);
+  elec.R[0] = 0.0;
+
+  SpeciesSet &tspecies = elec.getSpeciesSet();
+  int upIdx = tspecies.addSpecies("u");
+  int downIdx = tspecies.addSpecies("d");
+  int massIdx = tspecies.addAttribute("mass");
+  tspecies(massIdx, upIdx) = 1.0;
+  tspecies(massIdx, downIdx) = 1.0;
+
+  ParticleSet ions;
+  ions.setName("ion0");
+  ions.create(1);
+  ions.R[0] = 0.0;
+  SpeciesSet &ispecies = ions.getSpeciesSet();
+  int heIdx = ispecies.addSpecies("He");
+  ions.update();
+
+  elec.addTable(ions,DT_SOA);
+  elec.update();
+  Libxml2Document doc;
+
+  bool okay = doc.parse("he_sto3g.wfj.xml");
+  REQUIRE(okay);
+  xmlNodePtr root = doc.getRoot();
+
+  TrialWaveFunction psi(c);
+
+  WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
+  particle_set_map["e"]    = &elec;
+  particle_set_map["ion0"] = &ions;
+
+  SPOSetBuilderFactory bf(elec, psi, particle_set_map);
+
+  OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
+  REQUIRE(MO_base.size() == 1);
+
+  SPOSetBuilder* bb = bf.createSPOSetBuilder(MO_base[0]);
+  REQUIRE(bb != NULL);
+
+  OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
+  bb->loadBasisSetFromXML(MO_base[0]);
+  SPOSet* sposet = bb->createSPOSet(slater_base[0]);
+
+  LCAOrbitalSet* lcob = dynamic_cast<LCAOrbitalSet*>(sposet);
+  REQUIRE(lcob != NULL);
+
+  typedef QMCTraits::RealType RealType;
+  RealType rc = 0.1;
+  int npts = 10;
+
+
+  LCAOrbitalSet phi = LCAOrbitalSet(lcob->myBasisSet);
+  phi.setOrbitalSetSize(lcob->OrbitalSetSize);
+  phi.BasisSetSize = lcob->BasisSetSize;
+  phi.setIdentity(false);
+
+  LCAOrbitalSet eta = LCAOrbitalSet(lcob->myBasisSet);
+  eta.setOrbitalSetSize(lcob->OrbitalSetSize);
+  eta.BasisSetSize = lcob->BasisSetSize;
+  eta.setIdentity(false);
+
+  *(eta.C) = *(lcob->C);
+  *(phi.C) = *(lcob->C);
+
+
+  int num_center = 1;
+  int center_idx = 0;
+  std::vector<bool> corrCenter(num_center, "true");
+  splitPhiEta(center_idx, corrCenter, phi, eta);
+
+  OneMolecularOrbital phiMO(&elec, &ions, &phi);
+  int orb_idx = 0;
+  phiMO.changeOrbital(center_idx, orb_idx);
+
+  OneMolecularOrbital etaMO(&elec, &ions, &eta);
+  etaMO.changeOrbital(center_idx, orb_idx);
+
+  //RealType phiAtRc = phiMO.phi(rc);
+  //std::cout << "Phi at Rc = " << phiAtRc << std::endl;
+
+  RealType dx = rc*1.2/npts;
+  ValueVector_t pos(npts);
+  ValueVector_t ELideal(npts);
+  for (int i = 0; i < npts; i++) {
+    pos[i] = (i+1.0)*dx;
+  }
+
+  RealType Z = 2.0;
+
+
+  ValueType valRc;
+  GradType gradRc;
+  ValueType lapRc;
+  phiMO.phi_vgl(rc, valRc, gradRc, lapRc);
+   
+  RealType C = 0.0;
+  RealType valAtZero = phiMO.phi(0.0);
+  RealType eta0 = etaMO.phi(0.0); 
+  REQUIRE(eta0 == Approx(0.0)); // For He
+
+  TinyVector<ValueType, 5> X;
+  evalX(valRc, gradRc, lapRc, rc, Z, C, valAtZero, eta0, X);
+
+  // From gen_cusp_corr.py
+  REQUIRE(X[0] == Approx(-0.033436891110336));
+  REQUIRE(X[1] == Approx(-0.653568722769692));
+  REQUIRE(X[2] == Approx(-5.819488164002633));
+  REQUIRE(X[3] == Approx(-2.000000000000000));
+  REQUIRE(X[4] == Approx(-0.000396345019839));
+
+  //TinyVector<ValueType, 5> alpha;
+  CuspCorrectionParameters data;
+  data.Rc = rc;
+  data.C = C;
+  X2alpha(X, rc, data.alpha);
+
+  // From gen_cusp_corr.py
+  REQUIRE(data.alpha[0] == Approx(-0.000396345019839));
+  REQUIRE(data.alpha[1] == Approx(-2.000000000000000));
+  REQUIRE(data.alpha[2] == Approx(56.659413909100188));
+  REQUIRE(data.alpha[3] == Approx(-599.993590267020409));
+  REQUIRE(data.alpha[4] == Approx(2003.589050855219512));
+
+  CuspCorrection cusp(phiMO, data);
+  RealType Zeff = getZeff(Z, eta0, phiMO.phi(0.0));
+  ValueVector_t ELorig(npts);
+  RealType ELorigAtRc = getOriginalLocalEnergy(pos, Zeff, rc, phiMO, ELorig);
+  
+  // Original local energy
+  // From gen_cusp_corr.py
+  REQUIRE(ELorig[0] == Approx(-156.654088753559449));
+  REQUIRE(ELorig[1] == Approx(-73.346068180623860));
+  REQUIRE(ELorig[2] == Approx(-45.610385939854496));
+  REQUIRE(ELorig[3] == Approx(-31.780236703094037));
+  REQUIRE(ELorig[4] == Approx(-23.522092887496903));
+  REQUIRE(ELorig[5] == Approx(-18.057926774366479));
+  REQUIRE(ELorig[6] == Approx(-14.196956436578184));
+  REQUIRE(ELorig[7] == Approx(-11.343582162638119));
+  REQUIRE(ELorig[8] == Approx(-9.166698588588746));
+  REQUIRE(ELorig[9] == Approx(-7.467419605354912));
+
+  getIdealLocalEnergy(pos, Z, rc, ELorigAtRc, ELideal);
+
+  //std::cout << "EL ideal = " << ELideal << std::endl;
+
+  REQUIRE(ELorigAtRc== Approx(-10.5545686903018));
+  // Ideal local energy
+  // From gen_cusp_corr.py
+  REQUIRE(ELideal[0] == Approx(-10.634967820121256));
+  REQUIRE(ELideal[1] == Approx(-10.630023370426210));
+  REQUIRE(ELideal[2] == Approx(-10.622438262014274));
+  REQUIRE(ELideal[3] == Approx(-10.612683107096672));
+  REQUIRE(ELideal[4] == Approx(-10.601175522784974));
+  REQUIRE(ELideal[5] == Approx(-10.588284366044373));
+  REQUIRE(ELideal[6] == Approx(-10.574333734041067));
+  REQUIRE(ELideal[7] == Approx(-10.559606738039809));
+  REQUIRE(ELideal[8] == Approx(-10.544349058872488));
+  REQUIRE(ELideal[9] == Approx(-10.528772291863625));
+
+
+  ValueVector_t ELcurr(npts);
+  Zeff = getZeff(Z, eta0, cusp.phiBar(0.0));
+  getCurrentLocalEnergy(pos, Zeff, rc, ELorigAtRc, cusp, ELcurr);
+ // Current local energy
+  // From gen_cusp_corr.py
+  REQUIRE(ELcurr[0] == Approx(-130.055946501151169));
+  REQUIRE(ELcurr[1] == Approx(-95.141127120655000));
+  REQUIRE(ELcurr[2] == Approx(-66.353414984296620));
+  REQUIRE(ELcurr[3] == Approx(-43.358705539629348));
+  REQUIRE(ELcurr[4] == Approx(-26.111020098618731));
+  REQUIRE(ELcurr[5] == Approx(-14.663411862083322));
+  REQUIRE(ELcurr[6] == Approx(-9.047916153231112));
+  REQUIRE(ELcurr[7] == Approx(-9.224544860293122));
+  REQUIRE(ELcurr[8] == Approx(-9.166698588588746));
+  REQUIRE(ELcurr[9] == Approx(-7.467419605354912));
+
+
+
+  RealType chi2 = getELchi2(ELcurr, ELideal);
+  //REQUIRE(chi2 == Approx(26452.9857955927));
+  REQUIRE(chi2 == Approx(25854.2846426018)); 
+
+#if 0
+  MinimizePhiAtZero minPhi0(ELcurr, ELideal, cusp);
+
+  RealType start_phi0 = phiMO.phi(0.0);
+  Bracket_min_t<RealType> bracket = bracket_minimum(minPhi0, start_phi0);
+
+  auto min_res = find_mininum(minPhi0, bracket);
+#endif
+
+  cusp.cparam.Rc = rc;
+  RealType phi0 = minimizeForPhiAtZero(cusp, Z, eta0, pos, ELcurr, ELideal);
+  std::cout << "phi0 = " << phi0 << std::endl;
+  REQUIRE(phi0 == Approx(1.10489791512241));
+
+
+  std::cout << "alpha = " << cusp.cparam.alpha << std::endl;
+  // From gen_cusp_corr.py
+  // brents method
+  //REQUIRE(cusp.cparam.alpha[0] == Approx(0.099752931388349));
+  //REQUIRE(cusp.cparam.alpha[1] == Approx(-2.000000000000000));
+  //REQUIRE(cusp.cparam.alpha[2] == Approx(-3.430151935813066));
+  //REQUIRE(cusp.cparam.alpha[3] == Approx(201.200620998489711));
+  //REQUIRE(cusp.cparam.alpha[4] == Approx(-1000.889241390443090));
+  double eps = 0.0003;
+
+  // golden section search
+  CHECK(cusp.cparam.alpha[0] == Approx(0.099752947906715));
+  CHECK(cusp.cparam.alpha[1] == Approx(-2.000000000000000));
+  CHECK(cusp.cparam.alpha[2] == Approx(-3.430161846832382).epsilon(eps));
+  CHECK(cusp.cparam.alpha[3] == Approx(201.200753145414012).epsilon(eps));
+  CHECK(cusp.cparam.alpha[4] == Approx(-1000.889736941408955).epsilon(eps));
+
+
+#if 0
+
+  std::cout << "Rc = 0.2" << std::endl;
+  cusp.cparam.Rc = 0.2;
+
+  dx = cusp.cparam.Rc*1.2/npts;
+  for (int i = 0; i < npts; i++) {
+    pos[i] = (i+1.0)*dx;
+  }
+
+  phi0 = minimizeForPhiAtZero(cusp, Z, eta0, pos, ELcurr, ELideal);
+  std::cout << "phi0 = " << phi0 << std::endl;
+  std::cout << "alpha = " << cusp.cparam.alpha << std::endl;
+  CHECK(phi0 == Approx(1.21370813860125));
+  CHECK(cusp.cparam.alpha[0] == Approx(0.193680245429731));
+  CHECK(cusp.cparam.alpha[1] == Approx(-2.000000000000000));
+  CHECK(cusp.cparam.alpha[2] == Approx(-2.457636715462080).epsilon(eps));
+  CHECK(cusp.cparam.alpha[3] == Approx(44.150681525995104).epsilon(eps));
+  CHECK(cusp.cparam.alpha[4] == Approx(-110.516657997161062).epsilon(eps));
+
+  std::cout << "Rc = 0.3" << std::endl;
+  cusp.cparam.Rc = 0.3;
+  dx = cusp.cparam.Rc*1.2/npts;
+  for (int i = 0; i < npts; i++) {
+    pos[i] = (i+1.0)*dx;
+  }
+  phi0 = minimizeForPhiAtZero(cusp, Z, eta0, pos, ELcurr, ELideal);
+  std::cout << "phi0 = " << phi0 << std::endl;
+  std::cout << "alpha = " << cusp.cparam.alpha << std::endl;
+
+  CHECK(phi0 == Approx(1.30756352742608));
+  CHECK(cusp.cparam.alpha[0] == Approx(0.268165507600785));
+  CHECK(cusp.cparam.alpha[1] == Approx(-2.000000000000000));
+  CHECK(cusp.cparam.alpha[2] == Approx(-1.287424611600981).epsilon(eps));
+  CHECK(cusp.cparam.alpha[3] == Approx(13.267353922388702).epsilon(eps));
+  CHECK(cusp.cparam.alpha[4] == Approx(-22.573580351003290).epsilon(eps));
+
+
+  std::cout << "Rc = 0.4" << std::endl;
+  cusp.cparam.Rc = 0.4;
+  dx = cusp.cparam.Rc*1.2/npts;
+  for (int i = 0; i < npts; i++) {
+    pos[i] = (i+1.0)*dx;
+  }
+  phi0 = minimizeForPhiAtZero(cusp, Z, eta0, pos, ELcurr, ELideal);
+  std::cout << "phi0 = " << phi0 << std::endl;
+  std::cout << "alpha = " << cusp.cparam.alpha << std::endl;
+
+  CHECK(phi0 == Approx(1.36744420208896));
+
+
+  CHECK(cusp.cparam.alpha[0] == Approx(0.312943445940581));
+  CHECK(cusp.cparam.alpha[1] == Approx(-2.000000000000000));
+  CHECK(cusp.cparam.alpha[2] == Approx(-0.266042849512209).epsilon(eps));
+  CHECK(cusp.cparam.alpha[3] == Approx(2.771373038096821).epsilon(eps));
+  CHECK(cusp.cparam.alpha[4] == Approx(-3.700333116423872).epsilon(eps));
+#endif
+
+  std::cout << "Rc = 0.5" << std::endl;
+  cusp.cparam.Rc = 0.5;
+  dx = cusp.cparam.Rc*1.2/npts;
+  for (int i = 0; i < npts; i++) {
+    pos[i] = (i+1.0)*dx;
+  }
+
+  ELorigAtRc = getOriginalLocalEnergy(pos, Zeff, cusp.cparam.Rc, phiMO, ELorig);
+  getIdealLocalEnergy(pos, Z, cusp.cparam.Rc, ELorigAtRc, ELideal);
+#if 0
+  std::cout << "EL idea = " << std::endl;
+  for (int i = 0; i < npts; i++) {
+    std::cout << i << " " << ELideal[i] << std::endl;
+  }
+  std::cout << std::endl;
+#endif
+  
+
+  phi0 = minimizeForPhiAtZero(cusp, Z, eta0, pos, ELcurr, ELideal);
+  std::cout << "phi0 = " << phi0 << std::endl;
+  std::cout << "alpha = " << cusp.cparam.alpha << std::endl;
+
+  CHECK(phi0 == Approx(1.38615192165457));
+  CHECK(cusp.cparam.alpha[0] == Approx(0.326531501603760));
+  CHECK(cusp.cparam.alpha[1] == Approx(-2.000000000000000));
+  CHECK(cusp.cparam.alpha[2] == Approx(0.346373691083105));
+  CHECK(cusp.cparam.alpha[3] == Approx(-0.685391898685964).epsilon(eps));
+  CHECK(cusp.cparam.alpha[4] == Approx(0.649896548160093).epsilon(eps));
+
+
+  minimizeForRc(cusp, Z, rc, eta0, pos, ELcurr, ELideal);
+  std::cout << "alpha = " << cusp.cparam.alpha << std::endl;
+  std::cout << "rc = " << cusp.cparam.Rc << std::endl;
+
+  //CHECK(cusp.cparam.Rc == Approx());
+
+  SPOSetBuilderFactory::clear();
+
+}
+
+
 
 
 } // namespace qmcplusplus

@@ -155,11 +155,12 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   cusp.allocateELspace();
 
   // compute original EL
-  cusp.getELorig();
+  cusp.ELorigAtRc = cusp.getELorig();
 
   // compute current EL
   cusp.getELcurr();
 
+  std::cout << "ELorigAtRc = " << cusp.ELorigAtRc << std::endl;
   // compute ideal EL
   cusp.getELideal(cusp.ELorigAtRc);
 
@@ -190,31 +191,34 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   REQUIRE(cusp.ELorig[9] == Approx(-7.467419605354912));
 
 
-  // Current local energy
+ // Current local energy
   // From gen_cusp_corr.py
-  REQUIRE(cusp.ELcurr[0] == Approx(-119.501377810849448));
-  REQUIRE(cusp.ELcurr[1] == Approx(-84.586558430353278));
-  REQUIRE(cusp.ELcurr[2] == Approx(-55.798846293994899));
-  REQUIRE(cusp.ELcurr[3] == Approx(-32.804136849327627));
-  REQUIRE(cusp.ELcurr[4] == Approx(-15.556451408317010));
-  REQUIRE(cusp.ELcurr[5] == Approx(-4.108843171781601));
-  REQUIRE(cusp.ELcurr[6] == Approx(1.506652537070609));
-  REQUIRE(cusp.ELcurr[7] == Approx(1.330023830008599));
-  REQUIRE(cusp.ELcurr[8] == Approx(1.387870101712975));
-  REQUIRE(cusp.ELcurr[9] == Approx(3.087149084946809));
+  REQUIRE(cusp.ELcurr[0] == Approx(-130.055946501151169));
+  REQUIRE(cusp.ELcurr[1] == Approx(-95.141127120655000));
+  REQUIRE(cusp.ELcurr[2] == Approx(-66.353414984296620));
+  REQUIRE(cusp.ELcurr[3] == Approx(-43.358705539629348));
+  REQUIRE(cusp.ELcurr[4] == Approx(-26.111020098618731));
+  REQUIRE(cusp.ELcurr[5] == Approx(-14.663411862083322));
+  REQUIRE(cusp.ELcurr[6] == Approx(-9.047916153231112));
+  REQUIRE(cusp.ELcurr[7] == Approx(-9.224544860293122));
+  REQUIRE(cusp.ELcurr[8] == Approx(-9.166698588588746));
+  REQUIRE(cusp.ELcurr[9] == Approx(-7.467419605354912));
 
+
+  REQUIRE(cusp.ELorigAtRc== Approx(-10.5545686903018));
   // Ideal local energy
   // From gen_cusp_corr.py
-  REQUIRE(cusp.ELideal[0] == Approx(-0.080399129819489));
-  REQUIRE(cusp.ELideal[1] == Approx(-0.075454680124444));
-  REQUIRE(cusp.ELideal[2] == Approx(-0.067869571712510));
-  REQUIRE(cusp.ELideal[3] == Approx(-0.058114416794904));
-  REQUIRE(cusp.ELideal[4] == Approx(-0.046606832483210));
-  REQUIRE(cusp.ELideal[5] == Approx(-0.033715675742608));
-  REQUIRE(cusp.ELideal[6] == Approx(-0.019765043739301));
-  REQUIRE(cusp.ELideal[7] == Approx(-0.005038047738043));
-  REQUIRE(cusp.ELideal[8] == Approx(0.010219631429280));
-  REQUIRE(cusp.ELideal[9] == Approx(0.025796398438142));
+  REQUIRE(cusp.ELideal[0] == Approx(-10.634967820121256));
+  REQUIRE(cusp.ELideal[1] == Approx(-10.630023370426210));
+  REQUIRE(cusp.ELideal[2] == Approx(-10.622438262014274));
+  REQUIRE(cusp.ELideal[3] == Approx(-10.612683107096672));
+  REQUIRE(cusp.ELideal[4] == Approx(-10.601175522784974));
+  REQUIRE(cusp.ELideal[5] == Approx(-10.588284366044373));
+  REQUIRE(cusp.ELideal[6] == Approx(-10.574333734041067));
+  REQUIRE(cusp.ELideal[7] == Approx(-10.559606738039809));
+  REQUIRE(cusp.ELideal[8] == Approx(-10.544349058872488));
+  REQUIRE(cusp.ELideal[9] == Approx(-10.528772291863625));
+
 
   double chi2 = cusp.getchi2();
   REQUIRE(chi2 == Approx(25854.2846426019));
@@ -227,7 +231,33 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   xgrid[0] = 0.012;
   rad_orb.resize(1);
 
-  cusp.execute(0, 0, 2.0, &bs_phi, &bs_eta, xgrid, rad_orb, "none", rc, data);
+  rc = 0.5;
+  cusp.Rc = rc;
+  cusp.ELorigAtRc = cusp.getELorig();
+  cusp.getELcurr();
+  cusp.getELideal(cusp.ELorigAtRc);
+  std::cout << "ELorigAtRc = " << cusp.ELorigAtRc << std::endl;
+  std::cout << "Beta0 = " << cusp.beta0 << std::endl;
+  std::cout << "pos = " << cusp.pos << std::endl;
+  std::cout << "ELideal at rc=0.5" << std::endl << cusp.ELideal << std::endl;
+
+  chi2 = cusp.execute(0, 0, 2.0, &bs_phi, &bs_eta, xgrid, rad_orb, "none", rc, data);
+  std::cout << "Final chi2 = " << chi2 << std::endl;
+  std::cout << "data alpha = " << data.alpha << std::endl;
+  std::cout << "data sg = " << data.sg << std::endl;
+  std::cout << "data C = " << data.C << std::endl;
+  std::cout << "data Rc = " << data.Rc << std::endl;
+  std::cout <<  std::endl;
+
+#if 1
+  cusp.Rc_max = rc;
+  cusp.executeWithRCLoop(0, 0, 2.0, &bs_phi, &bs_eta, xgrid, rad_orb, "none", rc, data);
+  std::cout << "After rc loop" << std::endl;
+  std::cout << "Final chi2 = " << chi2 << std::endl;
+  std::cout << "data alpha = " << data.alpha << std::endl;
+  std::cout << "data sg = " << data.sg << std::endl;
+  std::cout << "data Rc = " << data.Rc << std::endl;
+#endif
 
   SPOSetBuilderFactory::clear();
 

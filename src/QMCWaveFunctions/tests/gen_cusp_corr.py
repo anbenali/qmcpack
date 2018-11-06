@@ -12,6 +12,7 @@ import gaussian_orbitals
 import read_qmcpack
 import math
 import numpy as np
+import scipy.optimize
 
 
 
@@ -26,7 +27,7 @@ C = Symbol('C')
 
 
 
-def solve_for_alpha():
+def solve_for_alpha_eqns():
   p = alpha[0] + alpha[1]*r + alpha[2]*r**2 + alpha[3]*r**3 + alpha[4]*r**4
 
 
@@ -51,7 +52,7 @@ def solve_for_alpha():
 
   return sln[0]
 
-alpha_sln = solve_for_alpha()
+alpha_sln = solve_for_alpha_eqns()
 
 
 def solve_for_alpha(Xvals, rc_val):
@@ -73,10 +74,10 @@ def simple_X_vals():
   #for i,s in enumerate(alpha_sln):
   #  print(alpha[i], ' = ', s.subs(svals))
 
-def evalX(gto, Z_val, rc_val):
+def evalX(gto, Z_val, rc_val, val_zero):
   Xvals = [0.0]*6
   val_rc, grad_rc, lap_rc  = [v[0] for v in gto.eval_vgl(rc_val, 0.0, 0.0)]
-  val_zero, grad_zero, lap_zero  = [v[0] for v in gto.eval_vgl(0.0, 0.0, 0.0)]
+  #val_zero, grad_zero, lap_zero  = [v[0] for v in gto.eval_vgl(0.0, 0.0, 0.0)]
   Xvals[1] = log(val_rc)
   Xvals[2] = grad_rc[0]/val_rc
   Xvals[3] = (lap_rc - 2.0*grad_rc[0]/rc_val)/val_rc
@@ -125,10 +126,12 @@ def eval_El(El_sym, r_val, Zeff_val, alpha_vals):
   return val
 
 
-def get_grid():
+def get_grid(rc):
   pos = []
-  for i in range(10):
-    rval = .012*(i+1)
+  nelems = 10
+  dx = rc*1.2/nelems
+  for i in range(nelems):
+    rval = dx*(i+1)
     pos.append(rval)
   return pos
 
@@ -157,21 +160,19 @@ def get_current_local_energy(pos, gto, El_sym, alpha_vals, rc_val, dE, Zeff_val)
 
 
 
-def get_ideal_local_energy(pos, rc_val, beta0_val=0.0):
+def get_ideal_local_energy(pos, rc_val, beta0_val=0.0, Z_val=2.0, EL_at_rc=0.0):
   ideal_EL = []
   beta0 = Symbol('beta_0')
   beta_vals = [beta0, 3.25819, -15.0126, 33.7308, -42.8705, 31.2276, -12.1316, 1.94692]
   El_terms = [beta_vals[n]*r**(n+1) for n in range(1,8)]
   Z = Symbol('Z')
-  Z_val = 2.0
   EL_ideal_sym = Z*Z*(beta0 + sum(El_terms))
 
   slist = {beta0: 0.0, Z:Z_val, r: rc_val}
 
   idealEL_at_rc = EL_ideal_sym.subs(slist).evalf()
   #print('idealEL at rc = ',idealEL_at_rc)
-  beta0_val = (-idealEL_at_rc)/Z_val/Z_val
-  #print('beta0_val = ',beta0_val)
+  beta0_val = (EL_at_rc - idealEL_at_rc)/Z_val/Z_val
 
   for rval in pos:
     slist = {beta0: beta0_val, Z:Z_val, r: rval}
@@ -179,6 +180,7 @@ def get_ideal_local_energy(pos, rc_val, beta0_val=0.0):
     ideal_EL.append(v)
 
   return ideal_EL
+
 
 
 def get_phi_tilde_and_derivatives():
@@ -202,32 +204,95 @@ def get_phi_tilde_and_derivatives():
   return pt_func, pt_dr_func, pt_d2r_func
 
 
+class OptimizePhiZero:
+  def __init__(self, gto, Z_val, Zeff_val, rc_val, pos, EL_sym, dE, EL_ideal):
+    self.gto = gto
+    self.C_val = 0.0
+    self.Z_val = Z_val
+    self.Zeff_val = Zeff_val
+    self.rc_val = rc_val
+    self.pos = pos
+    self.EL_sym = EL_sym
+    self.dE = dE
+    self.EL_ideal = EL_ideal
+    self.alpha_vals = [0.0]*5
+    self.chi2 = 0.0
+
+  def __call__(self, phi_at_zero):
+    X = evalX(self.gto, self.Z_val, self.rc_val, phi_at_zero)
+    self.alpha_vals = solve_for_alpha(X, self.rc_val)
+
+    current_EL = get_current_local_energy(self.pos, self.gto, self.EL_sym, self.alpha_vals, self.rc_val, self.dE, self.Zeff_val)
+
+    self.chi2 = 0.0
+    for rval, ideal, curr in zip(self.pos, self.EL_ideal, current_EL):
+      self.chi2 += (ideal - curr)**2
+
+    print('phi_at_zero = ',phi_at_zero,' chi2 = ',self.chi2)
+    return self.chi2
+
+class OptimizeRc:
+  def __init__(self, gto, Z_val, Zeff_val, rc_val, pos, EL_sym, dE, EL_ideal, val_zero):
+    self.gto = gto
+    self.C_val = 0.0
+    self.Z_val = Z_val
+    self.Zeff_val = Zeff_val
+    self.rc_val = rc_val
+    self.pos = pos
+    self.EL_sym = EL_sym
+    self.dE = dE
+    self.EL_ideal = EL_ideal
+    self.alpha_vals = [0.0]*5
+    self.val_zero = val_zero
+
+  def __call__(self, rc_val):
+    print('\nRc val = ',rc_val)
+    self.pos = get_grid(rc_val)
+    ELorig_at_rc = get_original_local_energy([rc_val], self.gto, self.EL_sym, self.alpha_vals, rc_val, self.Zeff_val)[0]
+    EL_ideal = get_ideal_local_energy(self.pos, rc_val, EL_at_rc=ELorig_at_rc)
+    cc = OptimizePhiZero(self.gto, self.Z_val, self.Zeff_val, rc_val, self.pos, self.EL_sym, self.dE, EL_ideal)
+    bracket = scipy.optimize.bracket(cc, self.val_zero, 1.0005*self.val_zero)
+  
+    try:
+      scipy.optimize.minimize_scalar(cc, bracket[:3], method='golden')
+
+    except ValueError as e:
+      print("Bracket error: ",bracket)
+      print(e)
+    return cc.chi2
+
 
 def values_for_He():
-  rc_val = 0.1
+  rc_val = 0.5
   Z_val = 2
 
   basis_set,MO = read_qmcpack.parse_qmc_wf('he_sto3g.wfj.xml',['He'])
   he_gto = gaussian_orbitals.GTO(basis_set['He'])
 
-  Xvals = evalX(he_gto, Z_val, rc_val)
+  val_zero  =  he_gto.eval_v(0.0, 0.0, 0.0)[0]
+  Xvals = evalX(he_gto, Z_val, rc_val, val_zero )
 
   alpha_vals = solve_for_alpha(Xvals, rc_val)
   output_required_xvals_and_alphas(Xvals, alpha_vals)
 
-  El_sym = get_symbolic_effective_local_energy()
-  print("El_sym = ",El_sym)
+  EL_sym = get_symbolic_effective_local_energy()
+  print("EL_sym = ",EL_sym)
 
   Zeff_val = 2.0
-  el_at_rc = -eval_El(El_sym, rc_val, Zeff_val, alpha_vals)
-  dE = el_at_rc
+  el_at_rc = eval_El(EL_sym, rc_val, Zeff_val, alpha_vals)
+  #dE = el_at_rc
+  dE = 0.0
   print('el at rc_val = ',el_at_rc)
 
 
-  pos = get_grid()
+  pos = get_grid(rc_val)
 
-  current_EL = get_current_local_energy(pos, he_gto, El_sym, alpha_vals, rc_val, dE, Zeff_val)
-  original_EL = get_original_local_energy(pos, he_gto, El_sym, alpha_vals, rc_val, Zeff_val)
+  original_EL = get_original_local_energy(pos, he_gto, EL_sym, alpha_vals, rc_val, Zeff_val)
+
+  ELorig_at_rc = get_original_local_energy([rc_val], he_gto, EL_sym, alpha_vals, rc_val, Zeff_val)[0]
+  print('Elorig at rc = ',ELorig_at_rc)
+  dE = 0.0
+  current_EL = get_current_local_energy(pos, he_gto, EL_sym, alpha_vals, rc_val, dE, Zeff_val)
   #print('Current effective local energy')
   #for (p,v) in zip(pos,current_EL):
   #  print(p,v)
@@ -240,14 +305,50 @@ def values_for_He():
   print("  // Current local energy")
   output_array(current_EL, "cusp.ELcurr")
 
+  print("  REQUIRE(ELorigAtRc== Approx(%.15g));"%ELorig_at_rc)
   print("  // Ideal local energy")
-  ideal_EL = get_ideal_local_energy(pos,rc_val)
-  output_array(ideal_EL, "cusp.ELideal")
+  
+  #val_rc  = he_gto.eval_v(rc_val, 0.0, 0.0)[0]
+  #print("  // Val at rc = ",val_rc)
+  EL_ideal = get_ideal_local_energy(pos,rc_val,EL_at_rc=ELorig_at_rc)
+  #output_array(ideal_EL, "cusp.ELideal")
+  output_array(EL_ideal, "ELideal")
 
   chi2 = 0.0
-  for rval, ideal, curr in zip(pos, ideal_EL, current_EL):
+  for rval, ideal, curr in zip(pos, EL_ideal, current_EL):
     chi2 += (ideal - curr)**2
   print('  REQUIRE(chi2 == Approx(%.10f)); '%chi2)
+
+  cc = OptimizePhiZero(he_gto, Z_val, Zeff_val, rc_val, pos, EL_sym, dE, EL_ideal)
+  print('cc = ',cc(val_zero))
+
+  #out = scipy.optimize.minimize(cc, val_zero, method='Nelder-Mead')
+  #out = scipy.optimize.minimize(cc, val_zero)
+  bracket = scipy.optimize.bracket(cc, val_zero, val_zero+0.005)
+  print('bracket = ',bracket)
+  out = scipy.optimize.minimize_scalar(cc, bracket[:3], method='golden')
+  print('min out = ',out)
+  print('  REQUIRE(phi0 == Approx(%.15g));'%out.x)
+
+  print('alpha values = ',cc.alpha_vals)
+  output_array(cc.alpha_vals, "cusp.cparam.alpha")
+
+  print('Starting Rc optimization')
+  
+  #fout = open("chi2.out","w")
+  #fout.write("# rc   chi2\n")
+  rc_opt = OptimizeRc(he_gto, Z_val, Zeff_val, rc_val, pos, EL_sym, dE, EL_ideal, val_zero)
+  #rc_vals = np.linspace(0.01, 20*rc_val, 40)
+  #for rc_val in rc_vals:
+  #  chi2 = rc_opt(rc_val)
+  #  print("rc = ",rc_val,"chi2 = ",chi2)
+  #  fout.write("%g  %g\n"%(rc_val,chi2))
+  #fout.close()
+
+  rc_bracket = scipy.optimize.bracket(rc_opt, rc_val, 1.0005*rc_val)
+  print('rc_bracket = ',rc_bracket)
+  rc_out = scipy.optimize.minimize_scalar(rc_opt, rc_bracket[:3], method='golden',bounds=[0.0, rc_val])
+  print('rc min out = ',rc_out)
 
 
 def split_by_angular_momentum(pos_list, elements, basis_sets, MO_matrix):
@@ -335,7 +436,7 @@ def gen_correction_for_hcn():
 
   cusp = CuspCorrection(cusp_data, pos_list, gtos, phi_list)
 
-  xgrid = get_grid()
+  xgrid = get_grid(0.1)
   for center_idx in range(3):
     for mo_idx in range(7):
       #val_data = vals[(center_idx, mo_idx)][0]
@@ -438,11 +539,25 @@ def gen_wavefunction_plus_correction_for_ethanol():
       print('  REQUIRE(all_lap[%d][%d] == Approx(%.10f));'%(iat, mo_idx, final_l))
       print()
 
+def gen_ideal_local_energy_values():
+  xgrid = np.linspace(0.01, 3.0, 10)
+  rc_val = 2.5
+  Z_val = 2.0
+  print("# Ideal local energy from gen_cusp_corr.py")
+  tmp = get_ideal_local_energy([rc_val], rc_val, 0.0, Z_val)
+  EL_at_rc = 1.0
+  beta0_val = (EL_at_rc-tmp[0])/(Z_val**2)
+  print('# beta0 = ',beta0_val)
+  ideal_el = get_ideal_local_energy(xgrid, rc_val, beta0_val, Z_val)
+  for x,en in zip(xgrid,ideal_el):
+    print(x,en)
+    
 
 
 if __name__ == '__main__':
   #simple_X_vals()
-  #values_for_He()
+  values_for_He()
   #gen_correction_for_hcn()
   #gen_wavefunction_plus_correction_for_hcn()
-  gen_wavefunction_plus_correction_for_ethanol()
+  #gen_wavefunction_plus_correction_for_ethanol()
+  #gen_ideal_local_energy_values()
