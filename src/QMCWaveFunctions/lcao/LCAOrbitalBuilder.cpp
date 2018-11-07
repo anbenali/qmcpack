@@ -501,6 +501,82 @@ namespace qmcplusplus
     removeSTypeOrbitals(corrCenter, lcwc);
   }
 
+  void generateCuspInfo(int orbital_set_size, int num_centers, Matrix<CuspCorrectionParameters>& info,
+                            ParticleSet& targetPtcl, ParticleSet& sourcePtcl,
+                            LCAOrbitalSetWithCorrection& lcwc)
+  {
+    typedef QMCTraits::RealType RealType;
+
+    LCAOrbitalSet phi = LCAOrbitalSet(lcwc.myBasisSet);
+    phi.setOrbitalSetSize(lcwc.OrbitalSetSize);
+    phi.BasisSetSize = lcwc.BasisSetSize;
+    phi.setIdentity(false);
+
+    LCAOrbitalSet eta = LCAOrbitalSet(lcwc.myBasisSet);
+    eta.setOrbitalSetSize(lcwc.OrbitalSetSize);
+    eta.BasisSetSize = lcwc.BasisSetSize;
+    eta.setIdentity(false);
+
+
+    std::vector<bool> corrCenter(num_centers, "true");
+
+    typedef OneDimGridBase<RealType> GridType;
+    int npts = 500;
+
+
+    
+
+    for (int center_idx = 0; center_idx < num_centers; center_idx++)
+    {
+      *(eta.C) = *(lcwc.C);
+      *(phi.C) = *(lcwc.C);
+
+      splitPhiEta(center_idx, corrCenter, phi, eta);
+      for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
+        bool corrO = false;
+        auto& cref(*(phi.C));
+        for(int ip=0; ip<cref.cols(); ip++)
+        {
+          if(std::abs(cref(mo_idx,ip)) > 1e-8)
+          {
+            corrO = true;
+            break;
+          }
+        }
+
+        if (corrO) {
+          OneMolecularOrbital etaMO(&sourcePtcl, &targetPtcl, &eta);
+          etaMO.changeOrbital(center_idx, mo_idx);
+
+          OneMolecularOrbital phiMO(&sourcePtcl, &targetPtcl, &phi);
+          phiMO.changeOrbital(center_idx, mo_idx);
+  
+          SpeciesSet& tspecies(sourcePtcl.getSpeciesSet());
+          int iz = tspecies.addAttribute("charge");
+          RealType Z = tspecies(iz, sourcePtcl.GroupID[center_idx]);
+
+          RealType Rc_max = 0.1;
+          RealType rc = 0.1;
+
+          RealType dx = rc*1.2/npts;
+          ValueVector_t pos(npts);
+          ValueVector_t ELideal(npts);
+          ValueVector_t ELcurr(npts);
+          for (int i = 0; i < npts; i++) {
+            pos[i] = (i+1.0)*dx;
+          }
+
+          RealType eta0 = etaMO.phi(0.0);
+          RealType Zeff = getZeff(Z, eta0, phiMO.phi(0.0));
+          ValueVector_t ELorig(0);
+          RealType ELorigAtRc = getOriginalLocalEnergy(pos, Zeff, rc, phiMO, ELorig);
+          getIdealLocalEnergy(pos, Z, rc, ELorigAtRc, ELideal);
+          CuspCorrection cusp(info(center_idx, mo_idx));
+          minimizeForRc(cusp, phiMO, Z, Rc_max, eta0, pos, ELcurr, ELideal);
+        }
+      }
+    }
+  }
 
   SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
@@ -535,9 +611,9 @@ namespace qmcplusplus
       Matrix<CuspCorrectionParameters> info(num_centers, orbital_set_size);
 
       if (cusp_file == "") {
-          APP_ABORT("cusp file required for now");
+          //APP_ABORT("cusp file required for now");
           // Generate correction parameters
-          //generateCuspInfo(orbital_set_size, info);
+             generateCuspInfo(orbital_set_size, num_centers, info, targetPtcl, sourcePtcl, *lcwc);
       } else {
         bool okay = readCuspInfo(cusp_file, id, orbital_set_size, info);
         if (!okay) {
