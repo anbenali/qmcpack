@@ -418,7 +418,7 @@ namespace qmcplusplus
   }
 
   // Modifies orbital set lcwc
-  void createCuspCorrection(const Matrix<CuspCorrectionParameters> &info, int num_centers,
+  void applyCuspCorrection(const Matrix<CuspCorrectionParameters> &info, int num_centers,
                             int orbital_set_size, ParticleSet& targetPtcl, ParticleSet& sourcePtcl,
                             LCAOrbitalSetWithCorrection& lcwc, const std::string &id)
   {
@@ -545,7 +545,7 @@ namespace qmcplusplus
         }
       }
 
-      createCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);
+      applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);
     }
 
 
