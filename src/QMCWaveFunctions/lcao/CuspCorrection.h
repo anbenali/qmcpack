@@ -148,7 +148,7 @@ class CuspCorrection
   //typedef SPOSet* SPOSetPtr;
 
 public:
-  inline RealType phiBar(RealType r)
+  inline RealType phiBar(RealType r, OneMolecularOrbital &phiMO)
   {
     if (r <= cparam.Rc)
       return cparam.C + Rr(r);
@@ -192,7 +192,8 @@ public:
 
   //CuspCorrection(ParticleSet* targetP, ParticleSet* sourceP) : targetPtcl(targetP), sourcePtcl(sourceP) {}
 
-  CuspCorrection(OneMolecularOrbital &MO, const CuspCorrectionParameters &param) : phiMO(MO), cparam(param) {}
+  //CuspCorrection(OneMolecularOrbital &MO, const CuspCorrectionParameters &param) : phiMO(MO), cparam(param) {}
+  CuspCorrection(const CuspCorrectionParameters &param) : cparam(param) {}
 
 #if 0
   void setPsi(SPOSetPtr Phi)
@@ -205,7 +206,7 @@ public:
 
   CuspCorrectionParameters cparam;
 
-  OneMolecularOrbital &phiMO;
+  //OneMolecularOrbital &phiMO;
   /// Index of orbital
   //int curOrb;
 
@@ -261,17 +262,17 @@ void X2alpha(const TinyVector<ValueType, 5> &X, RealType Rc, TinyVector<ValueTyp
 
 RealType getZeff(RealType Z, RealType etaAtZero, RealType phiBarAtZero);
 
-void getCurrentLocalEnergy(const ValueVector_t& pos, RealType Zeff, RealType Rc, RealType originalELatRc, CuspCorrection &cusp, ValueVector_t& ELcurr);
+void getCurrentLocalEnergy(const ValueVector_t& pos, RealType Zeff, RealType Rc, RealType originalELatRc, CuspCorrection &cusp, OneMolecularOrbital& phiMO, ValueVector_t& ELcurr);
 
 RealType getOriginalLocalEnergy(const ValueVector_t& pos, RealType Zeff, RealType Rc, OneMolecularOrbital &phiMO, ValueVector_t& Elorig);
 
 RealType getELchi2(const ValueVector_t& ELcurr, const ValueVector_t& ELideal);
 
 
-RealType minimizeForPhiAtZero(CuspCorrection &cusp, RealType Z, RealType eta0, ValueVector_t &pos, ValueVector_t &ELcurr, ValueVector_t& ELideal);
+RealType minimizeForPhiAtZero(CuspCorrection &cusp, OneMolecularOrbital &phiMO, RealType Z, RealType eta0, ValueVector_t &pos, ValueVector_t &ELcurr, ValueVector_t& ELideal);
 
 
-void minimizeForRc(CuspCorrection &cusp, RealType Z, RealType Rc_max, RealType eta0, ValueVector_t &pos,
+void minimizeForRc(CuspCorrection &cusp, OneMolecularOrbital &phiMO, RealType Z, RealType Rc_max, RealType eta0, ValueVector_t &pos,
 ValueVector_t &ELcurr, ValueVector_t& ELideal);
 
 

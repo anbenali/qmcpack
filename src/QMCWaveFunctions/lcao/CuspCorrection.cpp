@@ -190,7 +190,7 @@ void computeRadialPhiBar(ParticleSet* targetP,
 {
   OneMolecularOrbital phiMO(targetP, sourceP, Phi);
   phiMO.changeOrbital(curCenter_, curOrb_);
-  CuspCorrection cusp(phiMO, data);
+  CuspCorrection cusp(data);
   //CuspCorrection cusp(targetP, sourceP);
   //cusp.setPsi(Phi);
   //cusp.cparam    = data;
@@ -199,7 +199,7 @@ void computeRadialPhiBar(ParticleSet* targetP,
 
   for (int i = 0; i < xgrid.size(); i++)
   {
-    rad_orb[i] = cusp.phiBar(xgrid[i]);
+    rad_orb[i] = cusp.phiBar(xgrid[i], phiMO);
   }
 }
 
@@ -258,22 +258,22 @@ RealType getZeff(RealType Z, RealType etaAtZero, RealType phiBarAtZero)
   return Z*(1.0 + etaAtZero/phiBarAtZero);
 }
 
-void getCurrentLocalEnergy(const ValueVector_t& pos, RealType Zeff, RealType Rc, RealType originalELatRc, CuspCorrection &cusp, ValueVector_t& ELcurr)
+void getCurrentLocalEnergy(const ValueVector_t& pos, RealType Zeff, RealType Rc, RealType originalELatRc, CuspCorrection &cusp, OneMolecularOrbital &phiMO, ValueVector_t& ELcurr)
 {
   // assert(pos.size() == ELcurr.size());
   ValueType val;
   GradType grad;
   ValueType lap;
-  cusp.phiMO.phi_vgl(Rc, val, grad, lap);
+  phiMO.phi_vgl(Rc, val, grad, lap);
   RealType dE = originalELatRc - (-0.5*lap/val - Zeff/Rc);
   //std::cout << "dE = " << dE << std::endl;
   for (int i = 0; i  < pos.size(); i++) {
     RealType r = pos[i];
     if (r <= Rc) {
       RealType dp = cusp.dpr(r);
-      ELcurr[i] = -0.5*cusp.Rr(r)*(2.0*dp/r + cusp.d2pr(r) + dp*dp)/cusp.phiBar(r) - Zeff/r + dE;
+      ELcurr[i] = -0.5*cusp.Rr(r)*(2.0*dp/r + cusp.d2pr(r) + dp*dp)/cusp.phiBar(r, phiMO) - Zeff/r + dE;
     } else {
-      cusp.phiMO.phi_vgl(pos[i], val, grad, lap);
+      phiMO.phi_vgl(pos[i], val, grad, lap);
       ELcurr[i] = -0.5*lap/val - Zeff/r + dE;
     }
   }
@@ -316,6 +316,8 @@ public:
   
   CuspCorrection& cusp;
 
+  OneMolecularOrbital& phiMO;
+
   ValueType etaAtZero; // phiEta.phi(Rc);
 
   ValueType valAtRc; // phiMO.phi(Rc);
@@ -331,7 +333,7 @@ public:
   ValueVector_t& ELcurr;
   ValueVector_t& ELideal;
 
-  MinimizePhiAtZero(ValueVector_t &pos_, ValueVector_t& ELcurr_, ValueVector_t &ELideal_, CuspCorrection &cusp_) : pos(pos_), ELcurr(ELcurr_), ELideal(ELideal_), cusp(cusp_) {}
+  MinimizePhiAtZero(ValueVector_t &pos_, ValueVector_t& ELcurr_, ValueVector_t &ELideal_, CuspCorrection &cusp_, OneMolecularOrbital &phiMO_) : pos(pos_), ELcurr(ELcurr_), ELideal(ELideal_), cusp(cusp_), phiMO(phiMO_) {}
 
 
   RealType operator()(RealType phi0) const {
@@ -346,8 +348,8 @@ public:
       TinyVector<ValueType, 5> X;
       evalX(valAtRc, gradAtRc, lapAtRc, Rc, Z, cusp.cparam.C, phi0, etaAtZero, X);
       X2alpha(X, Rc, cusp.cparam.alpha);
-      RealType Zeff = getZeff(Z, etaAtZero, cusp.phiBar(0.0));
-      getCurrentLocalEnergy(pos, Zeff, Rc, ELorigAtRc, cusp, ELcurr);
+      RealType Zeff = getZeff(Z, etaAtZero, cusp.phiBar(0.0, phiMO));
+      getCurrentLocalEnergy(pos, Zeff, Rc, ELorigAtRc, cusp, phiMO, ELcurr);
       //getCurrentLocalEnergy(pos, Zeff, Rc, 0.0, cusp, ELcurr);
       //std::cout << "  ELideal = " << ELideal[0] << std::endl;
       //std::cout << "  ELcurr = " << ELcurr[0] << std::endl;
@@ -363,7 +365,7 @@ struct ValGradLap
   ValueType lap;
 };
 
-  RealType evaluateForPhi0Body(RealType phi0, ValueVector_t &pos, ValueVector_t &ELcurr, ValueVector_t &ELideal, CuspCorrection &cusp, ValGradLap phiAtRc, RealType etaAtZero, RealType ELorigAtRc, RealType Z)
+  RealType evaluateForPhi0Body(RealType phi0, ValueVector_t &pos, ValueVector_t &ELcurr, ValueVector_t &ELideal, CuspCorrection &cusp, OneMolecularOrbital &phiMO, ValGradLap phiAtRc, RealType etaAtZero, RealType ELorigAtRc, RealType Z)
   {
       //std::cout << "Start cycle, phi0 =  " << phi0 << std::endl;
       cusp.cparam.sg = phi0 > 0.0 ? 1.0:-1.0;
@@ -372,8 +374,8 @@ struct ValGradLap
       ValueType  phiBarAtRc; // phiMO.phi(Rc);
       evalX(phiAtRc.val, phiAtRc.grad, phiAtRc.lap, cusp.cparam.Rc, Z, cusp.cparam.C, phi0, etaAtZero, X);
       X2alpha(X, cusp.cparam.Rc, cusp.cparam.alpha);
-      RealType Zeff = getZeff(Z, etaAtZero, cusp.phiBar(0.0));
-      getCurrentLocalEnergy(pos, Zeff, cusp.cparam.Rc, ELorigAtRc, cusp, ELcurr);
+      RealType Zeff = getZeff(Z, etaAtZero, cusp.phiBar(0.0, phiMO));
+      getCurrentLocalEnergy(pos, Zeff, cusp.cparam.Rc, ELorigAtRc, cusp, phiMO, ELcurr);
       //getCurrentLocalEnergy(pos, Zeff, Rc, 0.0, cusp, ELcurr);
       //std::cout << "  ELideal = " << ELideal[0] << std::endl;
       //std::cout << "  ELcurr = " << ELcurr[0] << std::endl;
@@ -383,16 +385,16 @@ struct ValGradLap
   }
 
 // output is return value and parameter values in cusp.cparam
-RealType minimizeForPhiAtZero(CuspCorrection &cusp, RealType Z, RealType eta0, ValueVector_t &pos, ValueVector_t &ELcurr, ValueVector_t& ELideal)
+RealType minimizeForPhiAtZero(CuspCorrection &cusp, OneMolecularOrbital &phiMO, RealType Z, RealType eta0, ValueVector_t &pos, ValueVector_t &ELcurr, ValueVector_t& ELideal)
 {
   //MinimizePhiAtZero minPhi0(pos, ELcurr, ELideal, cusp);
 
   ValGradLap vglAtRc;
   ValueVector_t tmp_pos(0);
   ValueVector_t ELorig(0);
-  RealType Zeff = getZeff(Z, eta0, cusp.phiBar(0.0) );
+  RealType Zeff = getZeff(Z, eta0, cusp.phiBar(0.0, phiMO) );
 
-  RealType ELorigAtRc = getOriginalLocalEnergy(tmp_pos, Zeff, cusp.cparam.Rc, cusp.phiMO, ELorig);
+  RealType ELorigAtRc = getOriginalLocalEnergy(tmp_pos, Zeff, cusp.cparam.Rc, phiMO, ELorig);
   getIdealLocalEnergy(pos, Z, cusp.cparam.Rc, ELorigAtRc, ELideal);
 #if 0
   minPhi0.ELorigAtRc =  getOriginalLocalEnergy(tmp_pos, Zeff, Rc, cusp.phiMO, ELorig);
@@ -401,34 +403,34 @@ RealType minimizeForPhiAtZero(CuspCorrection &cusp, RealType Z, RealType eta0, V
   minPhi0.etaAtZero = eta0;
   cusp.phiMO.phi_vgl(Rc, minPhi0.valAtRc, minPhi0.gradAtRc, minPhi0.lapAtRc);
 #endif
-  cusp.phiMO.phi_vgl(cusp.cparam.Rc, vglAtRc.val, vglAtRc.grad, vglAtRc.lap);
+  phiMO.phi_vgl(cusp.cparam.Rc, vglAtRc.val, vglAtRc.grad, vglAtRc.lap);
 
-  RealType start_phi0 = cusp.phiMO.phi(0.0);
+  RealType start_phi0 = phiMO.phi(0.0);
   //std::cout << "start phi0 = " << start_phi0 << std::endl;
-  Bracket_min_t<RealType> bracket = bracket_minimum([&](RealType x)->RealType{return evaluateForPhi0Body(x, pos, ELcurr, ELideal, cusp, vglAtRc, eta0, ELorigAtRc, Z);}, start_phi0);
+  Bracket_min_t<RealType> bracket = bracket_minimum([&](RealType x)->RealType{return evaluateForPhi0Body(x, pos, ELcurr, ELideal, cusp, phiMO, vglAtRc, eta0, ELorigAtRc, Z);}, start_phi0);
   //Bracket_min_t<RealType> bracket = bracket_minimum([&minPhi0](RealType x)->RealType{return minPhi0.oneCycle(x);}, start_phi0);
   //Bracket_min_t<RealType> bracket = bracket_minimum(minPhi0, start_phi0);
   //std::cout << "bracket okay = " << bracket.success << std::endl;
   //std::cout << "bracket = " << bracket.a << " " << bracket.b << " " << bracket.c << std::endl;
 
   //auto min_res = find_mininum([&minPhi0](RealType x)->RealType{return minPhi0.oneCycle(x);}, bracket);
-  auto min_res = find_minimum([&](RealType x)->RealType{return evaluateForPhi0Body(x, pos, ELcurr, ELideal, cusp, vglAtRc, eta0, ELorigAtRc, Z) ;}, bracket);
+  auto min_res = find_minimum([&](RealType x)->RealType{return evaluateForPhi0Body(x, pos, ELcurr, ELideal, cusp, phiMO, vglAtRc, eta0, ELorigAtRc, Z) ;}, bracket);
   //auto min_res = find_minimum(minPhi0, bracket);
   //std::cout << "phi0 min = " << min_res.first << " " << min_res.second  << std::endl;
   return min_res.first;
 }
 
 
-void minimizeForRc(CuspCorrection &cusp, RealType Z, RealType Rc_max, RealType eta0, ValueVector_t &pos,
+void minimizeForRc(CuspCorrection &cusp, OneMolecularOrbital &phiMO, RealType Z, RealType Rc_max, RealType eta0, ValueVector_t &pos,
 ValueVector_t &ELcurr, ValueVector_t& ELideal)
 {
   RealType Rc = Rc_max;
-  Bracket_min_t<RealType> bracket = bracket_minimum([&](RealType x)->RealType{cusp.cparam.Rc = x; return minimizeForPhiAtZero(cusp,Z , eta0, pos, ELcurr, ELideal);}, Rc_max, Rc_max);
+  Bracket_min_t<RealType> bracket = bracket_minimum([&](RealType x)->RealType{cusp.cparam.Rc = x; return minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);}, Rc_max, Rc_max);
 
   std::cout << "rc bracket okay = " << bracket.success << std::endl;
   std::cout << "rc bracket = " << bracket.a << " " << bracket.b << " " << bracket.c << std::endl;
   if (bracket.success) {
-    auto min_res  = find_minimum([&](RealType x)->RealType{cusp.cparam.Rc = x; return minimizeForPhiAtZero(cusp,Z , eta0, pos, ELcurr, ELideal);}, bracket);
+    auto min_res  = find_minimum([&](RealType x)->RealType{cusp.cparam.Rc = x; return minimizeForPhiAtZero(cusp, phiMO, Z , eta0, pos, ELcurr, ELideal);}, bracket);
     std::cout << "rc min = " << min_res.first << " " << min_res.second  << std::endl;
   }
   

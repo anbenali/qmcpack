@@ -713,7 +713,7 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   REQUIRE(data.alpha[3] == Approx(-599.993590267020409));
   REQUIRE(data.alpha[4] == Approx(2003.589050855219512));
 
-  CuspCorrection cusp(phiMO, data);
+  CuspCorrection cusp(data);
   RealType Zeff = getZeff(Z, eta0, phiMO.phi(0.0));
   ValueVector_t ELorig(npts);
   RealType ELorigAtRc = getOriginalLocalEnergy(pos, Zeff, rc, phiMO, ELorig);
@@ -751,8 +751,8 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
 
 
   ValueVector_t ELcurr(npts);
-  Zeff = getZeff(Z, eta0, cusp.phiBar(0.0));
-  getCurrentLocalEnergy(pos, Zeff, rc, ELorigAtRc, cusp, ELcurr);
+  Zeff = getZeff(Z, eta0, cusp.phiBar(0.0, phiMO));
+  getCurrentLocalEnergy(pos, Zeff, rc, ELorigAtRc, cusp, phiMO, ELcurr);
  // Current local energy
   // From gen_cusp_corr.py
   REQUIRE(ELcurr[0] == Approx(-130.055946501151169));
@@ -782,7 +782,7 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
 #endif
 
   cusp.cparam.Rc = rc;
-  RealType phi0 = minimizeForPhiAtZero(cusp, Z, eta0, pos, ELcurr, ELideal);
+  RealType phi0 = minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);
   std::cout << "phi0 = " << phi0 << std::endl;
   REQUIRE(phi0 == Approx(1.10489791512241));
 
@@ -881,7 +881,7 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
 #endif
   
 
-  phi0 = minimizeForPhiAtZero(cusp, Z, eta0, pos, ELcurr, ELideal);
+  phi0 = minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);
   std::cout << "phi0 = " << phi0 << std::endl;
   std::cout << "alpha = " << cusp.cparam.alpha << std::endl;
 
@@ -893,7 +893,7 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   CHECK(cusp.cparam.alpha[4] == Approx(0.649896548160093).epsilon(eps));
 
 
-  minimizeForRc(cusp, Z, rc, eta0, pos, ELcurr, ELideal);
+  minimizeForRc(cusp, phiMO, Z, rc, eta0, pos, ELcurr, ELideal);
   std::cout << "alpha = " << cusp.cparam.alpha << std::endl;
   std::cout << "rc = " << cusp.cparam.Rc << std::endl;
 
