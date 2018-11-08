@@ -545,10 +545,10 @@ namespace qmcplusplus
         }
 
         if (corrO) {
-          OneMolecularOrbital etaMO(&sourcePtcl, &targetPtcl, &eta);
+          OneMolecularOrbital etaMO(&targetPtcl, &sourcePtcl, &eta);
           etaMO.changeOrbital(center_idx, mo_idx);
 
-          OneMolecularOrbital phiMO(&sourcePtcl, &targetPtcl, &phi);
+          OneMolecularOrbital phiMO(&targetPtcl, &sourcePtcl, &phi);
           phiMO.changeOrbital(center_idx, mo_idx);
   
           SpeciesSet& tspecies(sourcePtcl.getSpeciesSet());
@@ -568,7 +568,7 @@ namespace qmcplusplus
 
           RealType eta0 = etaMO.phi(0.0);
           RealType Zeff = getZeff(Z, eta0, phiMO.phi(0.0));
-          ValueVector_t ELorig(0);
+          ValueVector_t ELorig(npts);
           RealType ELorigAtRc = getOriginalLocalEnergy(pos, Zeff, rc, phiMO, ELorig);
           getIdealLocalEnergy(pos, Z, rc, ELorigAtRc, ELideal);
           CuspCorrection cusp(info(center_idx, mo_idx));
