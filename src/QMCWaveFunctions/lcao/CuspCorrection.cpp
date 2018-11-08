@@ -421,19 +421,25 @@ RealType minimizeForPhiAtZero(CuspCorrection &cusp, OneMolecularOrbital &phiMO, 
 }
 
 
-void minimizeForRc(CuspCorrection &cusp, OneMolecularOrbital &phiMO, RealType Z, RealType Rc_max, RealType eta0, ValueVector_t &pos,
+void minimizeForRc(CuspCorrection &cusp, OneMolecularOrbital &phiMO, RealType Z, RealType Rc_init, RealType Rc_max, RealType eta0, ValueVector_t &pos,
 ValueVector_t &ELcurr, ValueVector_t& ELideal)
 {
-  RealType Rc = Rc_max;
-  Bracket_min_t<RealType> bracket = bracket_minimum([&](RealType x)->RealType{cusp.cparam.Rc = x; return minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);}, Rc_max, Rc_max);
+  RealType Rc = Rc_init;
+  Bracket_min_t<RealType> bracket = bracket_minimum([&](RealType x)->RealType{cusp.cparam.Rc = x; return minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);}, Rc_init, Rc_max);
 
   std::cout << "rc bracket okay = " << bracket.success << std::endl;
   std::cout << "rc bracket = " << bracket.a << " " << bracket.b << " " << bracket.c << std::endl;
   if (bracket.success) {
     auto min_res  = find_minimum([&](RealType x)->RealType{cusp.cparam.Rc = x; return minimizeForPhiAtZero(cusp, phiMO, Z , eta0, pos, ELcurr, ELideal);}, bracket);
     std::cout << "rc min = " << min_res.first << " " << min_res.second  << std::endl;
+  } else {
+    std::cout << "best rc = " << bracket.a << std::endl;
+    cusp.cparam.Rc = bracket.a;
+    minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);
   }
-  
+  std::cout << "  alpha = " << cusp.cparam.alpha[0] << " " << cusp.cparam.alpha[1] << " " << cusp.cparam.alpha[2];
+  std::cout << " " << cusp.cparam.alpha[3] << " " << cusp.cparam.alpha[4] << std::endl;
+
 }
 
 

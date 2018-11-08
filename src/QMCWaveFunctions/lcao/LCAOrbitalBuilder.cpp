@@ -555,7 +555,7 @@ namespace qmcplusplus
           int iz = tspecies.addAttribute("charge");
           RealType Z = tspecies(iz, sourcePtcl.GroupID[center_idx]);
 
-          RealType Rc_max = 0.1;
+          RealType Rc_max = 0.2;
           RealType rc = 0.1;
 
           RealType dx = rc*1.2/npts;
@@ -572,7 +572,8 @@ namespace qmcplusplus
           RealType ELorigAtRc = getOriginalLocalEnergy(pos, Zeff, rc, phiMO, ELorig);
           getIdealLocalEnergy(pos, Z, rc, ELorigAtRc, ELideal);
           CuspCorrection cusp(info(center_idx, mo_idx));
-          minimizeForRc(cusp, phiMO, Z, Rc_max, eta0, pos, ELcurr, ELideal);
+          minimizeForRc(cusp, phiMO, Z, rc, Rc_max, eta0, pos, ELcurr, ELideal);
+          info(center_idx, mo_idx) = cusp.cparam;
         }
       }
     }

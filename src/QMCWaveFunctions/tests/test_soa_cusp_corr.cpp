@@ -893,7 +893,7 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   CHECK(cusp.cparam.alpha[4] == Approx(0.649896548160093).epsilon(eps));
 
 
-  minimizeForRc(cusp, phiMO, Z, rc, eta0, pos, ELcurr, ELideal);
+  minimizeForRc(cusp, phiMO, Z, rc, rc, eta0, pos, ELcurr, ELideal);
   std::cout << "alpha = " << cusp.cparam.alpha << std::endl;
   std::cout << "rc = " << cusp.cparam.Rc << std::endl;
 

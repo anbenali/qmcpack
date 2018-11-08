@@ -272,7 +272,7 @@ RealType getELchi2(const ValueVector_t& ELcurr, const ValueVector_t& ELideal);
 RealType minimizeForPhiAtZero(CuspCorrection &cusp, OneMolecularOrbital &phiMO, RealType Z, RealType eta0, ValueVector_t &pos, ValueVector_t &ELcurr, ValueVector_t& ELideal);
 
 
-void minimizeForRc(CuspCorrection &cusp, OneMolecularOrbital &phiMO, RealType Z, RealType Rc_max, RealType eta0, ValueVector_t &pos,
+void minimizeForRc(CuspCorrection &cusp, OneMolecularOrbital &phiMO, RealType Z, RealType Rc_init, RealType Rc_max, RealType eta0, ValueVector_t &pos,
 ValueVector_t &ELcurr, ValueVector_t& ELideal);
 
 
