@@ -782,7 +782,8 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
 #endif
 
   cusp.cparam.Rc = rc;
-  RealType phi0 = minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);
+  chi2 = minimizeForPhiAtZero(cusp, phiMO, Z, eta0, pos, ELcurr, ELideal);
+  RealType phi0 = cusp.phiBar(0.0, phiMO);
   std::cout << "phi0 = " << phi0 << std::endl;
   REQUIRE(phi0 == Approx(1.10489791512241));
 
