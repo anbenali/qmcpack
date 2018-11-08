@@ -417,7 +417,7 @@ RealType minimizeForPhiAtZero(CuspCorrection &cusp, OneMolecularOrbital &phiMO, 
   auto min_res = find_minimum([&](RealType x)->RealType{return evaluateForPhi0Body(x, pos, ELcurr, ELideal, cusp, phiMO, vglAtRc, eta0, ELorigAtRc, Z) ;}, bracket);
   //auto min_res = find_minimum(minPhi0, bracket);
   //std::cout << "phi0 min = " << min_res.first << " " << min_res.second  << std::endl;
-  return min_res.first;
+  return min_res.second;
 }
 
 
