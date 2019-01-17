@@ -34,6 +34,8 @@
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"
 #include "Utilities/ProgressReportEngine.h"
+#include "Utilities/NewTimer.h"
+
 
 namespace qmcplusplus
 {
@@ -104,11 +106,11 @@ namespace qmcplusplus
 
 
   LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate *comm, xmlNodePtr cur)
-    : SPOSetBuilder(comm), targetPtcl(els), sourcePtcl(ions), myBasisSet(nullptr), h5_path(""), doCuspCorrection(false)
+    : SPOSetBuilder(comm), Comm(comm),targetPtcl(els), sourcePtcl(ions), myBasisSet(nullptr), h5_path(""), doCuspCorrection(false)
   {
     ClassName="LCAOrbitalBuilder";
     ReportEngine PRE(ClassName,"createBasisSet");
-
+     
     std::string keyOpt("NMO"); // Numerical Molecular Orbital
     std::string transformOpt("yes"); // Numerical Molecular Orbital
     std::string cuspC("no");  // cusp correction
@@ -422,6 +424,10 @@ namespace qmcplusplus
   {
     typedef QMCTraits::RealType RealType;
 
+    //NewTimer* CuspReaderTimer;
+    //CuspReaderTimer = TimerManager.createTimer("LCAOrbitalBuilder::ReadCuspTimer",timer_level_fine);
+
+
     LCAOrbitalSet phi = LCAOrbitalSet(lcwc.myBasisSet);
     phi.setOrbitalSetSize(lcwc.OrbitalSetSize);
     phi.BasisSetSize = lcwc.BasisSetSize;
@@ -446,8 +452,10 @@ namespace qmcplusplus
       xgrid[ig] = radial_grid->r(ig);
     }
 
+    //CuspReaderTimer->start();
     for (int ic = 0; ic < num_centers; ic++)
     {
+
       *(eta.C) = *(lcwc.C);
       *(phi.C) = *(lcwc.C);
 
@@ -461,41 +469,65 @@ namespace qmcplusplus
       for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
         cot->ID[mo_idx] = mo_idx;
       }
+       
+      //rad_orb has to be declared as first private. It is modified by each thread 
+      //in the computeRadialPhiBar() call. It has to be initialized properly, hence
+      // declared as firstprivate. targetPtcl AND sourcePtcl have to be cloned in order to
+      // avoid any race condition. They need to be pointer
+      // the wavefunction (phi) needs also to exist as on copy per thread. Otherwise it leads
+      // to a race condition. 
+      #pragma omp parallel firstprivate(rad_orb) shared (phi,cot,targetPtcl,sourcePtcl,ic,radial_grid) 
+      {
+          ParticleSet * LocTargetPtcl = new ParticleSet (targetPtcl); 
+          ParticleSet * LocSourcePtcl = new ParticleSet (sourcePtcl);
+          LocSourcePtcl->verbose=false;
+          LocTargetPtcl->verbose=false;
+          LCAOrbitalSet* LocPhi = new LCAOrbitalSet (phi);
+          LocPhi->myBasisSet = phi.myBasisSet->makeClone();
+          LocPhi->IsCloned=true;
 
-      for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
-        computeRadialPhiBar(&targetPtcl, &sourcePtcl, mo_idx, ic, &phi, xgrid, rad_orb, info(ic, mo_idx));
-        OneDimQuinticSpline<RealType> radial_spline(radial_grid, rad_orb);
-        RealType yprime_i = (rad_orb[1] - rad_orb[0])/(radial_grid->r(1) - radial_grid->r(0));
-        radial_spline.spline(0, yprime_i, rad_orb.size()-1, 0.0);
-        cot->AOs.add_spline(mo_idx, radial_spline);
+         #pragma omp for 
+         for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
+             computeRadialPhiBar(LocTargetPtcl, LocSourcePtcl, mo_idx, ic, LocPhi, xgrid, rad_orb, info(ic, mo_idx));
+             OneDimQuinticSpline<RealType> radial_spline(radial_grid, rad_orb);
+             RealType yprime_i = (rad_orb[1] - rad_orb[0])/(radial_grid->r(1) - radial_grid->r(0));
+             radial_spline.spline(0, yprime_i, rad_orb.size()-1, 0.0);
+             cot->AOs.add_spline(mo_idx, radial_spline);
+            
+             //This section is for debugging purpose 
+             if (outputManager.isDebugActive()) {
+               // For testing against AoS output
+               // Output phiBar to soaOrbs.downdet.C0.MO0
+               int nElms = 500;
+               RealType dx = info(ic,mo_idx).Rc * 1.2/nElms;
+               Vector<RealType> pos;
+               Vector<RealType> output_orb;
+               pos.resize(nElms);
+               output_orb.resize(nElms);
+               for (int i = 0; i < nElms; i++) {
+                 pos[i] = (i+1.0)*dx;
+               }
+               computeRadialPhiBar(&targetPtcl, &sourcePtcl, mo_idx, ic, &phi, pos, output_orb, info(ic, mo_idx));
+               std::string filename = "soaOrbs." + id + ".C" + std::to_string(ic) + ".MO" + std::to_string(mo_idx);
+               std::cout << "Writing to " << filename << std::endl;
+               std::ofstream out(filename.c_str());
+               out << "# r phiBar(r)" << std::endl;
+               for (int i = 0; i < nElms; i++) {
+                 out << pos[i] << "  "
+                     << output_orb[i]
+                     << std::endl;
+               }
+               out.close();
+             }//if debug
+         }//for
+         delete LocPhi;
+         delete LocTargetPtcl;
+         delete LocSourcePtcl;
 
-        if (outputManager.isDebugActive()) {
-          // For testing against AoS output
-          // Output phiBar to soaOrbs.downdet.C0.MO0
-          int nElms = 500;
-          RealType dx = info(ic,mo_idx).Rc * 1.2/nElms;
-          Vector<RealType> pos;
-          Vector<RealType> output_orb;
-          pos.resize(nElms);
-          output_orb.resize(nElms);
-          for (int i = 0; i < nElms; i++) {
-            pos[i] = (i+1.0)*dx;
-          }
-          computeRadialPhiBar(&targetPtcl, &sourcePtcl, mo_idx, ic, &phi, pos, output_orb, info(ic, mo_idx));
-          std::string filename = "soaOrbs." + id + ".C" + std::to_string(ic) + ".MO" + std::to_string(mo_idx);
-          std::cout << "Writing to " << filename << std::endl;
-          std::ofstream out(filename.c_str());
-          out << "# r phiBar(r)" << std::endl;
-          for (int i = 0; i < nElms; i++) {
-            out << pos[i] << "  "
-                << output_orb[i]
-                << std::endl;
-          }
-        out.close();
-        }
-      }
+      }//pragma parallel
       lcwc.cusp.add(ic, cot);
     }
+    //CuspReaderTimer->stop();
     removeSTypeOrbitals(corrCenter, lcwc);
   }
   void saveCusp(int orbital_set_size, int num_centers, Matrix<CuspCorrectionParameters>& info, std::string id)
@@ -571,7 +603,7 @@ namespace qmcplusplus
   }
   void generateCuspInfo(int orbital_set_size, int num_centers, Matrix<CuspCorrectionParameters>& info,
                             ParticleSet& targetPtcl, ParticleSet& sourcePtcl,
-                            LCAOrbitalSetWithCorrection& lcwc,std::string id )
+                            LCAOrbitalSetWithCorrection& lcwc,std::string id, Communicate *Comm)
   {
     typedef QMCTraits::RealType RealType;
 
@@ -591,56 +623,80 @@ namespace qmcplusplus
     typedef OneDimGridBase<RealType> GridType;
     int npts = 500;
 
-
-    
+    if (Comm->rank()==0)
+       app_log()<<"test0"<<std::endl;
+    else
+       app_log()<<"test1"<<std::endl;
+    std::cout<<"My Rank="<<Comm->getMPI()<<std::endl;
+    exit(0); 
     for (int center_idx = 0; center_idx < num_centers; center_idx++)
     {
-      std::cout<<"Working on Center "<<center_idx<<std::endl;
+      app_log()<<"Working on Center "<<center_idx<<std::endl;
       *(eta.C) = *(lcwc.C);
       *(phi.C) = *(lcwc.C);
       
       splitPhiEta(center_idx, corrCenter, phi, eta);
-      for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
-        bool corrO = false;
-        auto& cref(*(phi.C));
-        for(int ip=0; ip<cref.cols(); ip++)
-        {
-          if(std::abs(cref(mo_idx,ip)) > 0)
-          {
-            corrO = true;
-            break;
+      
+      #pragma omp parallel shared (npts,phi,eta,targetPtcl,sourcePtcl,center_idx,info) 
+      {
+          ParticleSet * LocTargetPtcl = new ParticleSet (targetPtcl); 
+          ParticleSet * LocSourcePtcl = new ParticleSet (sourcePtcl);
+          LocSourcePtcl->verbose=false;
+          LocTargetPtcl->verbose=false;
+          LCAOrbitalSet* LocPhi = new LCAOrbitalSet (phi);
+          LocPhi->myBasisSet = phi.myBasisSet->makeClone();
+          LocPhi->IsCloned=true;
+          LCAOrbitalSet* LocEta = new LCAOrbitalSet (eta);
+          LocEta->myBasisSet = eta.myBasisSet->makeClone();
+          LocEta->IsCloned=true;
+ 
+          #pragma omp for 
+          for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
+            bool corrO = false;
+            auto& cref(*(LocPhi->C));
+            for(int ip=0; ip<cref.cols(); ip++)
+            {
+              if(std::abs(cref(mo_idx,ip)) > 0)
+              {
+                corrO = true;
+                break;
+              }
+            }
+       
+            if (corrO) {
+              //app_log()<<"Working on Mo "<<mo_idx<<std::endl;
+              OneMolecularOrbital etaMO(LocTargetPtcl, LocSourcePtcl, LocEta);
+              etaMO.changeOrbital(center_idx, mo_idx);
+       
+              OneMolecularOrbital phiMO(LocTargetPtcl, LocSourcePtcl, LocPhi);
+              phiMO.changeOrbital(center_idx, mo_idx);
+   
+              SpeciesSet& tspecies(LocSourcePtcl->getSpeciesSet());
+              int iz = tspecies.addAttribute("charge");
+              RealType Z = tspecies(iz, LocSourcePtcl->GroupID[center_idx]);
+       
+              RealType Rc_max = 0.2;
+              RealType rc = 0.1;
+       
+              RealType dx = rc*1.2/npts;
+              ValueVector_t pos(npts);
+              ValueVector_t ELideal(npts);
+              ValueVector_t ELcurr(npts);
+              for (int i = 0; i < npts; i++) {
+                pos[i] = (i+1.0)*dx;
+              }
+       
+              RealType eta0 = etaMO.phi(0.0);
+              ValueVector_t ELorig(npts);
+              CuspCorrection cusp(info(center_idx, mo_idx));
+              minimizeForRc(cusp, phiMO, Z, rc, Rc_max, eta0, pos, ELcurr, ELideal);
+              info(center_idx, mo_idx) = cusp.cparam;
+            }
           }
-        }
-
-        if (corrO) {
-          std::cout<<"Working on Mo "<<mo_idx<<std::endl;
-          OneMolecularOrbital etaMO(&targetPtcl, &sourcePtcl, &eta);
-          etaMO.changeOrbital(center_idx, mo_idx);
-
-          OneMolecularOrbital phiMO(&targetPtcl, &sourcePtcl, &phi);
-          phiMO.changeOrbital(center_idx, mo_idx);
-  
-          SpeciesSet& tspecies(sourcePtcl.getSpeciesSet());
-          int iz = tspecies.addAttribute("charge");
-          RealType Z = tspecies(iz, sourcePtcl.GroupID[center_idx]);
-
-          RealType Rc_max = 0.2;
-          RealType rc = 0.1;
-
-          RealType dx = rc*1.2/npts;
-          ValueVector_t pos(npts);
-          ValueVector_t ELideal(npts);
-          ValueVector_t ELcurr(npts);
-          for (int i = 0; i < npts; i++) {
-            pos[i] = (i+1.0)*dx;
-          }
-
-          RealType eta0 = etaMO.phi(0.0);
-          ValueVector_t ELorig(npts);
-          CuspCorrection cusp(info(center_idx, mo_idx));
-          minimizeForRc(cusp, phiMO, Z, rc, Rc_max, eta0, pos, ELcurr, ELideal);
-          info(center_idx, mo_idx) = cusp.cparam;
-        }
+         delete LocPhi;
+         delete LocEta;
+         delete LocTargetPtcl;
+         delete LocSourcePtcl;
       }
     }
     saveCusp(orbital_set_size,num_centers,info, id);
@@ -678,10 +734,9 @@ namespace qmcplusplus
 
       int orbital_set_size = lcos->OrbitalSetSize;
       Matrix<CuspCorrectionParameters> info(num_centers, orbital_set_size);
-
       bool valid= readCuspInfo(cusp_file, id, orbital_set_size, info);
       if (!valid) {
-         generateCuspInfo(orbital_set_size, num_centers, info, targetPtcl, sourcePtcl, *lcwc, id);
+         generateCuspInfo(orbital_set_size, num_centers, info, targetPtcl, sourcePtcl, *lcwc, id, Comm);
       }
 
       applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);
