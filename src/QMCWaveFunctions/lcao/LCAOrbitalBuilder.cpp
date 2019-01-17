@@ -623,15 +623,23 @@ namespace qmcplusplus
     typedef OneDimGridBase<RealType> GridType;
     int npts = 500;
 
-    if (Comm->rank()==0)
-       app_log()<<"test0"<<std::endl;
-    else
-       app_log()<<"test1"<<std::endl;
-    std::cout<<"My Rank="<<Comm->getMPI()<<std::endl;
-    exit(0); 
-    for (int center_idx = 0; center_idx < num_centers; center_idx++)
+    int ChunkSize, rest,first,last;
+    ChunkSize=int(num_centers/Comm->size());    
+    rest=(num_centers%Comm->size());    
+    if(Comm->rank()==0)
     {
-      app_log()<<"Working on Center "<<center_idx<<std::endl;
+      first=0;
+      last=ChunkSize+rest;
+    }
+    else
+    {
+      first=Comm->rank()*ChunkSize+rest;
+      last=first+ChunkSize;
+    }
+    //for (int center_idx = 0; center_idx < num_centers; center_idx++)
+    for (int center_idx = first; center_idx < last; center_idx++)
+    {
+      std::cout<<"Working on Center "<<center_idx<<std::endl;
       *(eta.C) = *(lcwc.C);
       *(phi.C) = *(lcwc.C);
       
@@ -699,7 +707,9 @@ namespace qmcplusplus
          delete LocSourcePtcl;
       }
     }
-    saveCusp(orbital_set_size,num_centers,info, id);
+    Comm->barrier();
+    if (Comm->rank()==0)
+       saveCusp(orbital_set_size,num_centers,info, id);
   }
 
   
