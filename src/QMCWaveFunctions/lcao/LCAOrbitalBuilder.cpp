@@ -509,7 +509,6 @@ namespace qmcplusplus
                }
                computeRadialPhiBar(&targetPtcl, &sourcePtcl, mo_idx, ic, &phi, pos, output_orb, info(ic, mo_idx));
                std::string filename = "soaOrbs." + id + ".C" + std::to_string(ic) + ".MO" + std::to_string(mo_idx);
-               std::cout << "Writing to " << filename << std::endl;
                std::ofstream out(filename.c_str());
                out << "# r phiBar(r)" << std::endl;
                for (int i = 0; i < nElms; i++) {
@@ -532,8 +531,6 @@ namespace qmcplusplus
   }
   void saveCusp(int orbital_set_size, int num_centers, Matrix<CuspCorrectionParameters>& info, std::string id)
   {
-
-
 
     xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
     xmlNodePtr cuspRoot = xmlNewNode(NULL, BAD_CAST "qmcsystem");
@@ -630,13 +627,14 @@ namespace qmcplusplus
     {
       first=0;
       last=ChunkSize+rest;
+      ChunkSize+=rest;
     }
     else
     {
       first=Comm->rank()*ChunkSize+rest;
       last=first+ChunkSize;
     }
-    //for (int center_idx = 0; center_idx < num_centers; center_idx++)
+     
     for (int center_idx = first; center_idx < last; center_idx++)
     {
       std::cout<<"Working on Center "<<center_idx<<std::endl;
@@ -660,6 +658,7 @@ namespace qmcplusplus
  
           #pragma omp for 
           for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
+              app_log()<<"Working on Mo "<<mo_idx<<std::endl;
             bool corrO = false;
             auto& cref(*(LocPhi->C));
             for(int ip=0; ip<cref.cols(); ip++)
@@ -699,6 +698,7 @@ namespace qmcplusplus
               CuspCorrection cusp(info(center_idx, mo_idx));
               minimizeForRc(cusp, phiMO, Z, rc, Rc_max, eta0, pos, ELcurr, ELideal);
               info(center_idx, mo_idx) = cusp.cparam;
+              
             }
           }
          delete LocPhi;
@@ -708,8 +708,20 @@ namespace qmcplusplus
       }
     }
     Comm->barrier();
-    if (Comm->rank()==0)
+
+
+
+    //  for (int center_idx = 0; center_idx < orbital_set_size; center_idx++) 
+    //    for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
+
+      //     Comm->allgatherv(info(center_idx, mo_idx).C,info(center_idx, mo_idx).C, ChunkSize,last);
+      //     if (Comm->rank()==0)
+      //       std::cout<<info(center_idx, mo_idx).C<<"   "<<info(center_idx, mo_idx).sg<<"  "<<info(center_idx, mo_idx).Rc<<"  "<<info(center_idx, mo_idx).alpha[1]<<"   "<<info(center_idx, mo_idx).alpha[2]<<"   "<<info(center_idx, mo_idx).alpha[3]<<"  "<<info(center_idx, mo_idx).alpha[4]<<"  "<<info(center_idx, mo_idx).alpha[5]<<std::endl; 
+     // }
+
+       //if (Comm->rank()==0)
        saveCusp(orbital_set_size,num_centers,info, id);
+    
   }
 
   
