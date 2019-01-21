@@ -18,7 +18,9 @@
 
 #ifndef OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #define OHMMS_COMMUNICATION_OPERATORS_MPI_H
+#include "QMCWaveFunctions/lcao/CuspCorrection.h"
 #include "Utilities/PooledData.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 #include <stdint.h>
 ///dummy declarations to be specialized
 template<typename T> inline void gsum(T&, int)

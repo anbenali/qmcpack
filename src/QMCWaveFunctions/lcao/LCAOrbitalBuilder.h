@@ -42,9 +42,10 @@ namespace qmcplusplus
     ~LCAOrbitalBuilder();
     void loadBasisSetFromXML(xmlNodePtr cur);
     SPOSet* createSPOSetFromXML(xmlNodePtr cur);
-    
+
     private:
-    Communicate *Comm;
+
+    using SPOSetBuilder::myComm;
     ///target ParticleSet
     ParticleSet& targetPtcl;
     ///source ParticleSet

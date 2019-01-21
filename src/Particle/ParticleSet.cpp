@@ -51,7 +51,7 @@ void add_p_timer(std::vector<NewTimer*>& timers)
 
 ParticleSet::ParticleSet()
   : UseBoundBox(true), IsGrouped(true)
-  , ThreadID(0), SK(0), ParentName("0"),verbose(false)
+  , ThreadID(0), SK(0), ParentName("0")
   , quantum_domain(classical), TotalNum(0)
   , SameMass(true), myTwist(0.0), activePtcl(-1)
 {
@@ -62,7 +62,7 @@ ParticleSet::ParticleSet()
 ParticleSet::ParticleSet(const ParticleSet& p)
   : UseBoundBox(p.UseBoundBox), IsGrouped(p.IsGrouped)
   , ThreadID(0), mySpecies(p.getSpeciesSet()),SK(0), ParentName(p.parentName())
-  , SameMass(true), myTwist(0.0), activePtcl(-1), verbose(false)
+  , SameMass(true), myTwist(0.0), activePtcl(-1)
 {
   set_quantum_domain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable
@@ -81,8 +81,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   //construct the distance tables with the same order
   if(p.DistTables.size())
   {
-    if(verbose)
-      app_log() << "  Cloning distance tables. It has " << p.DistTables.size() << std::endl;
+    app_log() << "  Cloning distance tables. It has " << p.DistTables.size() << std::endl;
     addTable(*this,p.DistTables[0]->DTType); //first is always for this-this pair
     for (int i=1; i<p.DistTables.size(); ++i)
       addTable(p.DistTables[i]->origin(),p.DistTables[i]->DTType);
@@ -381,7 +380,6 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
     //add  this-this pair
     myDistTableMap.clear();
     myDistTableMap[myName]=0;
-
     app_debug() << "  ParticleSet::addTable create table #0 " << DistTables[0]->Name << std::endl;
     DistTables[0]->ID=0;
     if (psrc.getName() == myName)
@@ -396,7 +394,6 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
     //}
     return 0;
   }
-
   int tid;
   std::map<std::string,int>::iterator tit(myDistTableMap.find(psrc.getName()));
   if (tit == myDistTableMap.end())
