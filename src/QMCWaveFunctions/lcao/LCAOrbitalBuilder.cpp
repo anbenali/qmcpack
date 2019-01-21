@@ -617,8 +617,11 @@ namespace qmcplusplus
 
     typedef OneDimGridBase<RealType> GridType;
     int npts = 500;
-
-    
+    std::vector <int> offset;
+   // offset.resize(Comm->size());
+    FairDivideLow(num_centers,Comm->size(),offset);
+    for (int i=0; i<Comm->rank();i++)
+       std::cout<< "My Rank="<<Comm->rank()<<"   My part="<<offset[i]<<std::endl; 
     /* break up the elements */
     int *counts = new int[Comm->size()];
     int *disps  = new int[Comm->size()];
