@@ -617,82 +617,15 @@ namespace qmcplusplus
 
     typedef OneDimGridBase<RealType> GridType;
     int npts = 500;
+
     std::vector <int> offset;
-   // offset.resize(Comm->size());
     FairDivideLow(num_centers,Comm->size(),offset);
-    for (int i=0; i<Comm->rank();i++)
-       std::cout<< "My Rank="<<Comm->rank()<<"   My part="<<offset[i]<<std::endl; 
-    /* break up the elements */
-    int *counts = new int[Comm->size()];
-    int *disps  = new int[Comm->size()];
-    int pertask, mystart, mycount,myend;  
+    //std::cout<< "My Rank="<<Comm->rank()<<"   My part="<<offset[Comm->rank()+1]<<std::endl; 
 
-    disps[0] = 0;
-    if (num_centers<Comm->size())
-    {
-       for (int i=0; i<num_centers; i++)
-          counts[i] = 1;
-       for (int i=1; i<num_centers; i++)
-          disps[i] = disps[i-1] + counts[i-1];
-
-       for (int i=num_centers;i<Comm->size(); i++)
-       {
-          counts[i] = 0;
-          disps[i] = 0; 
-      
-       }
-       
-       mystart = disps[Comm->rank()];
-       mycount = counts[Comm->rank()];
-       myend   = mystart + mycount;
-       pertask=1;
-    }
-    else
-    {
-        pertask = num_centers/Comm->size();
-
-        for (int i=0; i<Comm->size()-1; i++)
-           counts[i] = pertask;
-        counts[Comm->size()-1] = num_centers - pertask*(Comm->size()-1);
-
-        for (int i=1; i<Comm->size(); i++)
-            disps[i] = disps[i-1] + counts[i-1];
-        mystart = disps[Comm->rank()];
-        mycount = counts[Comm->rank()];
-        myend   = mystart + mycount - 1;
-
-    }
-
-
-
-
-    for (int i=0; i<Comm->size(); i++){
-        std::cout<<"myrank="<<Comm->rank()<<"   mystart="<<mystart<<"   myend="<<myend<<"    num_center="<<num_centers<<"   Comm->size()="<<Comm->size()<<"  counts["<<i<<"]="<<counts[i]<<"   disps["<<i<<"]="<<disps[i]<<std::endl;
-    }
-    //exit(0); 
-    int ChunkSize, first,last,rest;
-    ChunkSize=int(num_centers/Comm->size());    
-    rest=(num_centers%Comm->size());    
-    if(Comm->rank()==0)
-    {
-      first=0;
-      last=ChunkSize+rest;
-      ChunkSize+=rest;
-    }
-    else
-    {
-      first=Comm->rank()*ChunkSize+rest;
-      last=first+ChunkSize;
-    }
-    for (int center_idx = 0; center_idx < Comm->rank(); center_idx++)
-    {
-         disps[center_idx]=last;
-         counts[center_idx]=ChunkSize;
-    }     
-
-
-    outputManager.shutOff(); 
-    for (int center_idx = first; center_idx < last; center_idx++)
+   // outputManager.pause(); 
+    
+    //for (int center_idx = offset[Comm->rank()]; center_idx < offset[Comm->rank()+1]; center_idx++)
+    for (int center_idx = 0; center_idx < num_centers; center_idx++)
     {
       std::cout<<"Working on Center "<<center_idx<<std::endl;
       *(eta.C) = *(lcwc.C);
@@ -761,33 +694,14 @@ namespace qmcplusplus
     Comm->barrier();
     
        saveCusp(orbital_set_size,num_centers,info, id);
-    outputManager.resume(); 
-     //for (int center_idx0 = 0; center_idx0 <num_centers; center_idx0++) 
-     // for (int center_idx = mystart; center_idx <myend; center_idx++) 
-      //  for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++){
+    //outputManager.resume(); 
+    //exit(0);
 
     //    MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
       //                 &(info(center_idx, mo_idx).alpha[0]), , 1, MPI_DOUBLE, MPI_COMM_WORLD);
           // std::cout<<info(center_idx, mo_idx).C<<"   "<<info(center_idx, mo_idx).sg<<"  "<<info(center_idx, mo_idx).Rc<<"  "<<info(center_idx, mo_idx).alpha[1]<<"   "<<info(center_idx, mo_idx).alpha[2]<<"   "<<info(center_idx, mo_idx).alpha[3]<<"  "<<info(center_idx, mo_idx).alpha[4]<<"  "<<info(center_idx, mo_idx).alpha[5]<<std::endl; 
 
       //  } 
-    //       MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, &(info(center_idx, mo_idx).Rc), ChunkSize, last, MPI_DOUBLE, MPI_COMM_WORLD);
-//        MPI_Allgather(&info(center_idx, mo_idx).Rc,ChunkSize,MPI_DOUBLE,&info(center_idx, mo_idx).Rc,ChunkSize,MPI_DOUBLE,MPI_COMM_WORLD);
-
-//            Comm->allgatherv(info(center_idx, mo_idx).C,info(center_idx, mo_idx).C,ChunkSize,last);
-
-
-
-    //  for (int center_idx = 0; center_idx < orbital_set_size; center_idx++) 
-    //    for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++) {
-
-      //     Comm->allgatherv(info(center_idx, mo_idx).C,info(center_idx, mo_idx).C, ChunkSize,last);
-      //     if (Comm->rank()==0)
-      //       std::cout<<info(center_idx, mo_idx).C<<"   "<<info(center_idx, mo_idx).sg<<"  "<<info(center_idx, mo_idx).Rc<<"  "<<info(center_idx, mo_idx).alpha[1]<<"   "<<info(center_idx, mo_idx).alpha[2]<<"   "<<info(center_idx, mo_idx).alpha[3]<<"  "<<info(center_idx, mo_idx).alpha[4]<<"  "<<info(center_idx, mo_idx).alpha[5]<<std::endl; 
-     // }
-
-       //if (Comm->rank()==0)
-       //saveCusp(orbital_set_size,num_centers,info, id);
     
   }
 
