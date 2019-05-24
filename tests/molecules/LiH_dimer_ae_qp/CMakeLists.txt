@@ -25,6 +25,16 @@ IF (NOT QMC_CUDA)
                     0 LIH_SHORT # VMC
                     )
 
+  QMC_RUN_AND_CHECK(short-LiH_dimer_ae_qp2-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_qp"
+                    vmc_short_noj_qp2
+                    vmc_short_noj_qp2.in.xml
+                    1 16
+                    TRUE
+                    0 LIH_SHORT # VMC
+                    )
+
+
   LIST(APPEND LIH_LONG "kinetic" "7.991334 0.0022") # kinetic energy
   LIST(APPEND LIH_LONG "totenergy" "-7.9873140 0.0002") # total energy
   LIST(APPEND LIH_LONG "eeenergy" "3.488827 0.00026") # e-e energy
@@ -33,6 +43,15 @@ IF (NOT QMC_CUDA)
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_qp"
                     vmc_long_noj
                     vmc_long_noj.in.xml
+                    1 16
+                    TRUE
+                    0 LIH_LONG # VMC
+                    )
+
+  QMC_RUN_AND_CHECK(long-LiH_dimer_ae_qp2-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_qp"
+                    vmc_long_noj_qp2
+                    vmc_long_noj_qp2.in.xml
                     1 16
                     TRUE
                     0 LIH_LONG # VMC
