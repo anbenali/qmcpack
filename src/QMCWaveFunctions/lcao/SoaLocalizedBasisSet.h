@@ -173,9 +173,9 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const std::vector<double> R {0.,0.,0.};
     for (int c = 0; c < NumCenters; c++)
     {
-      LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl, R);
+      LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl, coordR);
     }
-
+/*
     //Applying Phase higher
     std::vector<double> K {0.333,0.333,0.333};
     RealType s,c;
@@ -194,8 +194,8 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
      
 #else
      RealType PhaseFactor=1;                                                                                                  
-     RealType dPhaseFactor_x,dPhaseFactor_y,dPhaseFactor_z;                                                                           
-     dPhaseFactor_x=dPhaseFactor_y=dPhaseFactor_z=0.0;                                                                                  
+     RealType d2PhaseFactor,dPhaseFactor_x,dPhaseFactor_y,dPhaseFactor_z;                                                                           
+     d2PhaseFactor=dPhaseFactor_x=dPhaseFactor_y=dPhaseFactor_z=0.0;                                                                                  
 #endif 
 
     QMCTraits::ValueType temp0,temp1,temp2,temp3,temp4;
@@ -212,6 +212,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
       vgl.data(3)[i]= temp3 * PhaseFactor + dPhaseFactor_z * temp0; // dpsi_z*eikr+psi*deikr_z
       vgl.data(4)[i]=PhaseFactor*temp4 + temp0 * d2PhaseFactor +2*(temp1*dPhaseFactor_x+temp2*dPhaseFactor_y+temp3*dPhaseFactor_z);
     }
+*/
   }
 
 
@@ -266,9 +267,9 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const std::vector<double> R {0.,0.,0.};
     for (int c = 0; c < NumCenters; c++)
     {
-      LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c],R);
+      LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c],coordR);
     }
-
+/*
     //Applying Phase higher
     std::vector<double> K {0.333,0.333,0.333};
     RealType s,c;
@@ -282,7 +283,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 #endif 
     for (int i =0; i<BasisSetSize;i++)
       vals[i]*=PhaseFactor;
-    
+ */   
   }
   inline void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vgl_type& vgl)
   {

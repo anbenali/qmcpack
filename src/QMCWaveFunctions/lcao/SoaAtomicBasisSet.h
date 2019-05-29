@@ -146,9 +146,9 @@ struct SoaAtomicBasisSet
     T r_new;
 
 
-    coord_R[0]=CoordR[0];
-    coord_R[1]=CoordR[1];
-    coord_R[2]=CoordR[2];
+//    coord_R[0]=CoordR[0];
+//    coord_R[1]=CoordR[1];
+//    coord_R[2]=CoordR[2];
 
 
     constexpr T cone(1);
@@ -200,6 +200,11 @@ struct SoaAtomicBasisSet
           dr_new[0] = dr[0] + TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
           dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
           dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
+        
+          coord_R[0] = CoordR[0] + TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
+          coord_R[1] = CoordR[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
+          coord_R[2] = CoordR[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
+
           r_new     = std::sqrt(dot(dr_new, dr_new));
           RealType SupTwist= std::sqrt(dot(SuperTwist,SuperTwist));
 
@@ -219,15 +224,15 @@ struct SoaAtomicBasisSet
 
 
 #if defined (QMC_COMPLEX)
-          phase = -dot(coord_R,SuperTwist);
+          phase = dot(coord_R,SuperTwist);
           sincos(phase, &s, &c);
           std::complex<double> i(0.0,1.0);
           std::complex<RealType> e_mikr(c, s);
           std::complex<RealType> de_mikr_x, de_mikr_y, de_mikr_z;
     
-          de_mikr_x=ValueType(-i*SuperTwist[0])*e_mikr;
-          de_mikr_y=ValueType(-i*SuperTwist[1])*e_mikr;
-          de_mikr_z=ValueType(-i*SuperTwist[2])*e_mikr;
+          de_mikr_x=ValueType(i*SuperTwist[0])*e_mikr;
+          de_mikr_y=ValueType(i*SuperTwist[1])*e_mikr;
+          de_mikr_z=ValueType(i*SuperTwist[2])*e_mikr;
 #else
           RealType e_mikr=1;
           RealType de_mikr_x, de_mikr_y, de_mikr_z;
@@ -247,7 +252,7 @@ struct SoaAtomicBasisSet
             const T ang_z     = ylm_z[lm];
             const T vr        = phi[nl];
 
-
+/*
             ///ORIGINAL (COMMENT IF YOU DONT USE PHASE HIGHER)
             psi[ib] += ang * vr;
             dpsi_x[ib] += (ang * gr_x  + vr * ang_x );
@@ -255,7 +260,7 @@ struct SoaAtomicBasisSet
             dpsi_z[ib] += (ang * gr_z  + vr * ang_z );
             d2psi[ib] += (ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) + vr * ylm_l[lm]);
 
-/*
+*/
            ///VALUE WITH PHASE
            psi[ib] += ang * vr * e_mikr;
            ///GRADIENT WITH PHASE
@@ -265,7 +270,7 @@ struct SoaAtomicBasisSet
            ///LAPLACIAN WITH PHASE
            d2psi[ib]  += (e_mikr*(-ang * vr *  SupTwist*SupTwist + vr * ylm_l[lm] + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +  ang * (ctwo * drnloverr + d2phi[nl]) ) 
           + ctwo * ( de_mikr_x * (ang_x * vr + ang * gr_x) + de_mikr_y * (ang_y * vr + ang * gr_y) + de_mikr_z * (ang_z * vr + ang * gr_z) ) ); 
-  */         
+
           }
         }
       }
@@ -643,9 +648,9 @@ struct SoaAtomicBasisSet
 
     RealType s, c,phase;
 
-    coord_R[0]=CoordR[0];
-    coord_R[1]=CoordR[1];
-    coord_R[2]=CoordR[2];
+//    coord_R[0]=CoordR[0];
+//    coord_R[1]=CoordR[1];
+//    coord_R[2]=CoordR[2];
 
 
     //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
@@ -667,6 +672,9 @@ struct SoaAtomicBasisSet
           dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
           dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
 
+          coord_R[0] = CoordR[0] + TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
+          coord_R[1] = CoordR[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
+          coord_R[2] = CoordR[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
           r_new = std::sqrt(dot(dr_new, dr_new));
           if (r_new >= Rmax)
             continue;
@@ -674,7 +682,7 @@ struct SoaAtomicBasisSet
           
 
 #if defined (QMC_COMPLEX)
-          phase = -dot(coord_R,SuperTwist);
+          phase = dot(coord_R,SuperTwist);
           sincos(phase, &s, &c);
           std::complex<RealType> e_mikr(c, s);
 #else
@@ -683,7 +691,7 @@ struct SoaAtomicBasisSet
           Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
           MultiRnl->evaluate(r_new, phi_r);
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
-            psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]];//*e_mikr;
+            psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]]*e_mikr;
 
         }
       }
