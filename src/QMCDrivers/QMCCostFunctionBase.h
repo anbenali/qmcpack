@@ -104,6 +104,8 @@ public:
   void Report();
   ///report  parameters at the end
   void reportParameters();
+  ///report  parameters at the end in HDF5 format
+  void reportParameters_H5();
 
   ///return the counter which keeps track of optimization steps
   inline int getReportCounter() const { return ReportCounter; }

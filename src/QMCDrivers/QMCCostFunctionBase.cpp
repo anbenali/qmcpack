@@ -246,6 +246,41 @@ void QMCCostFunctionBase::reportParameters()
   }
 }
 
+void QMCCostFunctionBase::reportParameters_H5()
+{
+  if (!myComm->rank())
+  {
+    
+    char newh5[128];
+    int ci_size=0;
+    std::vector<double> CIcoeff; 
+    sprintf(newh5, "%s.opt.h5", RootName.c_str());
+    *msg_stream << "  <optVariables href=\"" << newh5 << "\">" << std::endl;
+    hdf_archive hout;
+    hout.create(newh5, H5F_ACC_TRUNC);
+    hout.push("MultiDet", true);
+    for (int i=0; i<OptVariables.size(); i++)
+    {
+         char Coeff[128];
+         sprintf(Coeff,"CIcoeff_%d", i+1);
+         if(Coeff!=OptVariables.name(i))
+         {
+             ci_size=i;
+             break;
+         }
+         CIcoeff.push_back(OptVariables[i]); 
+    }
+    
+    hout.write(ci_size, "NbDet");
+    hout.write(CIcoeff, "Coeff");
+  
+    
+    hout.close();
+
+    exit(0);
+  }
+}
+
 /** Apply constraints on the optimizables.
  *
  * Here is where constraints should go

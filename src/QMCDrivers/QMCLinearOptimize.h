@@ -66,6 +66,8 @@ public:
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
 
   std::vector<RealType> optdir, optparm;
+  ///Saving Optimized parameters to HDF5 output file.
+  bool ReportToH5; 
   ///index to denote the partition id
   int PartID;
   ///total number of partitions that will share a set of configuratons

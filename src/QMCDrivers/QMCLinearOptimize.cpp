@@ -57,6 +57,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
       wfNode(NULL),
       optNode(NULL),
       param_tol(1e-4)
+//      ReportToH5(false)
 {
   IsQMCDriver = false;
   //     //set the optimization flag
@@ -166,7 +167,10 @@ void QMCLinearOptimize::finish()
   MyCounter++;
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;
+
   optTarget->reportParameters();
+  if (ReportToH5)  
+     optTarget->reportParameters_H5();
   int nw_removed = W.getActiveWalkers() - NumOfVMCWalkers;
   app_log() << "   Restore the number of walkers to " << NumOfVMCWalkers << ", removing " << nw_removed << " walkers."
             << std::endl;

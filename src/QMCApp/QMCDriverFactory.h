@@ -63,6 +63,9 @@ struct QMCDriverFactory : public MPIObjectBase
   ///current QMC mode determined by curQmcModeBits
   unsigned long curQmcMode;
 
+  ///Tag to save parameters in H5 file
+  std::string h5_tag;
+
   ///8-bit (ALTERNATE_MODE,SPACEWARP_MODE, MULTIPLE_MODE, UPDATE_MODE)
   std::bitset<QMC_MODE_MAX> curQmcModeBits;
 

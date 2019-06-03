@@ -39,7 +39,7 @@ namespace qmcplusplus
 {
 ///initialize the static data member
 //ParticleSetPool* QMCDriverFactory::ptclPool = new ParticleSetPool;
-QMCDriverFactory::QMCDriverFactory(Communicate* c) : MPIObjectBase(c), qmcSystem(0), qmcDriver(0), curRunType(DUMMY_RUN)
+QMCDriverFactory::QMCDriverFactory(Communicate* c) : MPIObjectBase(c), qmcSystem(0), qmcDriver(0), h5_tag("no"), curRunType(DUMMY_RUN)
 {
   ////create ParticleSetPool
   ptclPool = new ParticleSetPool(myComm);
@@ -84,6 +84,7 @@ bool QMCDriverFactory::setQMCDriver(int curSeries, xmlNodePtr cur)
   std::string multi_tag("no");
   std::string warp_tag("no");
   std::string append_tag("no");
+
 #if defined(QMC_CUDA)
   std::string gpu_tag("yes");
 #else
@@ -93,6 +94,7 @@ bool QMCDriverFactory::setQMCDriver(int curSeries, xmlNodePtr cur)
   OhmmsAttributeSet aAttrib;
   aAttrib.add(qmc_mode, "method");
   aAttrib.add(update_mode, "move");
+  aAttrib.add(h5_tag, "hdf5");
   aAttrib.add(multi_tag, "multiple");
   aAttrib.add(warp_tag, "warp");
   aAttrib.add(append_tag, "append");
@@ -311,6 +313,10 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
         new QMCFixedSampleLinearOptimize(*qmcSystem, *primaryPsi, *primaryH, *hamPool, *psiPool, myComm);
     //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
     opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
+    if (h5_tag=="yes")
+       opt->ReportToH5=true;
+    else
+       opt->ReportToH5=false;
     qmcDriver = opt;
   }
   else if (curRunType == CS_LINEAR_OPTIMIZE_RUN)
