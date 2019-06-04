@@ -273,8 +273,6 @@ void QMCCostFunctionBase::reportParameters_H5()
     
     hout.write(ci_size, "NbDet");
     hout.write(CIcoeff, "Coeff");
-  
-    
     hout.close();
 
     exit(0);

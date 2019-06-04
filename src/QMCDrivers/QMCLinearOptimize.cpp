@@ -57,7 +57,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
       wfNode(NULL),
       optNode(NULL),
       param_tol(1e-4)
-//      ReportToH5(false)
+      ReportToH5(false)
 {
   IsQMCDriver = false;
   //     //set the optimization flag
