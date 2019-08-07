@@ -3,13 +3,13 @@
   <wavefunction name="psi0" target="e">
     <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" twist="0.333  0.333  0.333" href="S1-twist1.h5" PBCimages="5  5  5">
       <slaterdeterminant>
-        <determinant id="updet" size="4">
+        <determinant id="updet" size="16">
           <occupation mode="ground"/>
-          <coefficient size="26" spindataset="0"/>
+          <coefficient size="72" spindataset="0"/>
         </determinant>
-        <determinant id="downdet" size="4">
+        <determinant id="downdet" size="16">
           <occupation mode="ground"/>
-          <coefficient size="26" spindataset="0"/>
+          <coefficient size="72" spindataset="0"/>
         </determinant>
       </slaterdeterminant>
     </determinantset>
