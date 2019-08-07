@@ -26,7 +26,7 @@ sp_twist=[0.333, 0.333, 0.333]
 kpts = [[ 0.333,  0.333, 0.333]]
 
 supcell=cell
-mydf = df.FFTDF(supcell,kpts)
+mydf = df.GDF(supcell,kpts)
 mydf.auxbasis = 'weigend'
 
 mf = scf.KRHF(supcell,kpts)

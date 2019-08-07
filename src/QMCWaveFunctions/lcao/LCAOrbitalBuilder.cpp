@@ -888,6 +888,8 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist)
   ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
   int phase_idx = 0;
   int TransX, TransY, TransZ;
+  //RealType ConstVal=2*RealType(M_PI);
+  RealType ConstVal=1;
   for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
   {
     TransX = ((i % 2) * 2 - 1) * ((i + 1) / 2);
@@ -898,9 +900,15 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist)
       {
         TransZ = ((k % 2) * 2 - 1) * ((k + 1) / 2);
         RealType s, c;
-        RealType vec_scalar = (TransX * SuperTwist[0] + TransY * SuperTwist[1] + TransZ * SuperTwist[2]);
-        sincos(-2 * RealType(M_PI) * vec_scalar, &s, &c);
+        PosType Val; 
+
+        Val[0] =  TransX * 3.566800000; 
+        Val[1] =  TransY * 3.566800000; 
+        Val[2] =  TransZ * 3.566800000; 
+        
+        sincos(ConstVal*  (TransX * Val[0] * SuperTwist[0] + TransY * Val[1] * SuperTwist[1] + TransZ * Val[2] * SuperTwist[2]), &s, &c);
         PeriodicImagePhaseFactors.emplace_back(c, s);
+        
       }
     }
   }

@@ -175,22 +175,22 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     {
       LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl, coordR);
     }
-/*
+
     //Applying Phase higher
-    std::vector<double> K {0.333,0.333,0.333};
+    std::vector<double> K {0.01,0.01,0.01};
     RealType s,c;
-    RealType vec_scalar;
-    vec_scalar=coordR[0]*K[0]+coordR[1]*K[1]+coordR[2]*K[2];  
+    //RealType ConstVal=2*RealType(M_PI);
+    RealType ConstVal=1;
 #if defined (QMC_COMPLEX)
-    sincos(vec_scalar, &s, &c);                                                                                              
+    sincos(ConstVal*(coordR[0]*K[0]+coordR[1]*K[1]+coordR[2]*K[2]), &s, &c);                                                                                              
     std::complex<double> i(0.0,1.0);
     std::complex<RealType> PhaseFactor(c, s);                                                                                
     std::complex<RealType> dPhaseFactor_x, dPhaseFactor_y, dPhaseFactor_z, d2PhaseFactor;
-                                                                                                                              
-     dPhaseFactor_x=QMCTraits::ValueType(i*K[0])*PhaseFactor;
-     dPhaseFactor_y=QMCTraits::ValueType(i*K[1])*PhaseFactor;
-     dPhaseFactor_z=QMCTraits::ValueType(i*K[2])*PhaseFactor;
-     d2PhaseFactor=-PhaseFactor*(K[0]*K[0]+K[1]*K[1]+K[2]*K[2]);
+
+     dPhaseFactor_x=QMCTraits::ValueType(i*ConstVal*K[0])*PhaseFactor;
+     dPhaseFactor_y=QMCTraits::ValueType(i*ConstVal*K[1])*PhaseFactor;
+     dPhaseFactor_z=QMCTraits::ValueType(i*ConstVal*K[2])*PhaseFactor;
+     d2PhaseFactor=-PhaseFactor*ConstVal*ConstVal*(K[0]*K[0]+K[1]*K[1]+K[2]*K[2]);
      
 #else
      RealType PhaseFactor=1;                                                                                                  
@@ -207,12 +207,12 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
       temp3=vgl.data(3)[i];
       temp4=vgl.data(4)[i];
       vgl.data(0)[i]= temp0 * PhaseFactor;
-      vgl.data(1)[i]= temp1 * PhaseFactor + dPhaseFactor_x * temp0; // dpsi_x*eikr+psi*deikr_x
-      vgl.data(2)[i]= temp2 * PhaseFactor + dPhaseFactor_y * temp0; // dpsi_y*eikr+psi*deikr_y
-      vgl.data(3)[i]= temp3 * PhaseFactor + dPhaseFactor_z * temp0; // dpsi_z*eikr+psi*deikr_z
-      vgl.data(4)[i]=PhaseFactor*temp4 + temp0 * d2PhaseFactor +2*(temp1*dPhaseFactor_x+temp2*dPhaseFactor_y+temp3*dPhaseFactor_z);
+      vgl.data(1)[i]= temp1 * PhaseFactor;// + dPhaseFactor_x * temp0; // dpsi_x*eikr+psi*deikr_x
+      vgl.data(2)[i]= temp2 * PhaseFactor;// + dPhaseFactor_y * temp0; // dpsi_y*eikr+psi*deikr_y
+      vgl.data(3)[i]= temp3 * PhaseFactor;// + dPhaseFactor_z * temp0; // dpsi_z*eikr+psi*deikr_z
+      vgl.data(4)[i]=PhaseFactor*temp4;// + temp0 * d2PhaseFactor +2*(temp1*dPhaseFactor_x+temp2*dPhaseFactor_y+temp3*dPhaseFactor_z);
     }
-*/
+
   }
 
 
@@ -231,7 +231,8 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     {
       LOBasisSet[IonID[c]]->evaluateVGH(P.Lattice, dist[c], displ[c], BasisOffset[c], vgh);
     }
-    
+    app_log()<<"FUCK YOU!!!"<<std::endl;
+    exit(0);  
   }
 
   /** compute VGHGH 
@@ -269,22 +270,24 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     {
       LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c],coordR);
     }
-/*
+
     //Applying Phase higher
-    std::vector<double> K {0.333,0.333,0.333};
+    std::vector<double> K {0.01,0.01,0.01};
     RealType s,c;
-    RealType vec_scalar;
-    vec_scalar=coordR[0]*K[0]+coordR[1]*K[1]+coordR[2]*K[2];  
+    //RealType ConstVal=2*RealType(M_PI);
+    RealType ConstVal=1;
 #if defined (QMC_COMPLEX)
-    sincos(vec_scalar, &s, &c);                                                                                              
-    std::complex<RealType> PhaseFactor(c, s);                                                                                
+    sincos(ConstVal*(coordR[0]*K[0]+coordR[1]*K[1]+coordR[2]*K[2]), &s, &c);
+    std::complex<RealType> PhaseFactor(c, s); 
 #else
     RealType PhaseFactor=1;                                                                                                  
 #endif 
     for (int i =0; i<BasisSetSize;i++)
       vals[i]*=PhaseFactor;
- */   
+    
   }
+
+
   inline void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vgl_type& vgl)
   {
     //We need to zero out the temporary array vgl.  

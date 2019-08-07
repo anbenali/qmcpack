@@ -146,9 +146,6 @@ struct SoaAtomicBasisSet
     T r_new;
 
 
-//    coord_R[0]=CoordR[0];
-//    coord_R[1]=CoordR[1];
-//    coord_R[2]=CoordR[2];
 
 
     constexpr T cone(1);
@@ -184,7 +181,7 @@ struct SoaAtomicBasisSet
     RealType k= std::sqrt(dot( SuperTwist, SuperTwist));
     RealType s, c,phase;
 
-
+    int iter=-1;
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
     {
       //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
@@ -207,7 +204,7 @@ struct SoaAtomicBasisSet
 
           r_new     = std::sqrt(dot(dr_new, dr_new));
           RealType SupTwist= std::sqrt(dot(SuperTwist,SuperTwist));
-
+          iter++;
           //const size_t ib_max=NL.size();
           if (r_new >= Rmax)
             continue;
@@ -224,16 +221,20 @@ struct SoaAtomicBasisSet
 
 
 #if defined (QMC_COMPLEX)
+
           phase = dot(coord_R,SuperTwist);
           sincos(phase, &s, &c);
           std::complex<double> i(0.0,1.0);
           std::complex<RealType> e_mikr(c, s);
+          std::complex<RealType> e_mikr_p=periodic_image_phase_factors[iter];
+
           std::complex<RealType> de_mikr_x, de_mikr_y, de_mikr_z;
     
           de_mikr_x=ValueType(i*SuperTwist[0])*e_mikr;
           de_mikr_y=ValueType(i*SuperTwist[1])*e_mikr;
           de_mikr_z=ValueType(i*SuperTwist[2])*e_mikr;
 #else
+          RealType e_mikr_p=1;
           RealType e_mikr=1;
           RealType de_mikr_x, de_mikr_y, de_mikr_z;
           de_mikr_x=de_mikr_y=de_mikr_z=0.0;
@@ -252,25 +253,24 @@ struct SoaAtomicBasisSet
             const T ang_z     = ylm_z[lm];
             const T vr        = phi[nl];
 
-/*
             ///ORIGINAL (COMMENT IF YOU DONT USE PHASE HIGHER)
-            psi[ib] += ang * vr;
-            dpsi_x[ib] += (ang * gr_x  + vr * ang_x );
-            dpsi_y[ib] += (ang * gr_y  + vr * ang_y );
-            dpsi_z[ib] += (ang * gr_z  + vr * ang_z );
-            d2psi[ib] += (ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) + vr * ylm_l[lm]);
+            psi[ib] += ang * vr * e_mikr_p;
+            dpsi_x[ib] += (ang * gr_x  + vr * ang_x ) * e_mikr_p;
+            dpsi_y[ib] += (ang * gr_y  + vr * ang_y ) * e_mikr_p;
+            dpsi_z[ib] += (ang * gr_z  + vr * ang_z ) * e_mikr_p;
+            d2psi[ib] += (ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) + vr * ylm_l[lm]) * e_mikr_p;
 
-*/
+/*
            ///VALUE WITH PHASE
-           psi[ib] += ang * vr * e_mikr;
+           psi[ib] += ang * vr * e_mikr * e_mikr_p;
            ///GRADIENT WITH PHASE
-           dpsi_x[ib] += de_mikr_x * ( ang * vr ) + (ang * gr_x  + vr * ang_x ) * e_mikr; 
-           dpsi_y[ib] += de_mikr_y * ( ang * vr ) + (ang * gr_y  + vr * ang_y ) * e_mikr; 
-           dpsi_z[ib] += de_mikr_z * ( ang * vr ) + (ang * gr_z  + vr * ang_z ) * e_mikr; 
+           dpsi_x[ib] += (de_mikr_x * ( ang * vr ) + (ang * gr_x  + vr * ang_x ) * e_mikr)* e_mikr_p; 
+           dpsi_y[ib] += (de_mikr_y * ( ang * vr ) + (ang * gr_y  + vr * ang_y ) * e_mikr)* e_mikr_p; 
+           dpsi_z[ib] += (de_mikr_z * ( ang * vr ) + (ang * gr_z  + vr * ang_z ) * e_mikr)* e_mikr_p; 
            ///LAPLACIAN WITH PHASE
            d2psi[ib]  += (e_mikr*(-ang * vr *  SupTwist*SupTwist + vr * ylm_l[lm] + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +  ang * (ctwo * drnloverr + d2phi[nl]) ) 
-          + ctwo * ( de_mikr_x * (ang_x * vr + ang * gr_x) + de_mikr_y * (ang_y * vr + ang * gr_y) + de_mikr_z * (ang_z * vr + ang * gr_z) ) ); 
-
+          + ctwo * ( de_mikr_x * (ang_x * vr + ang * gr_x) + de_mikr_y * (ang_y * vr + ang * gr_y) + de_mikr_z * (ang_z * vr + ang * gr_z) ) )* e_mikr_p; 
+*/
           }
         }
       }
@@ -648,14 +648,10 @@ struct SoaAtomicBasisSet
 
     RealType s, c,phase;
 
-//    coord_R[0]=CoordR[0];
-//    coord_R[1]=CoordR[1];
-//    coord_R[2]=CoordR[2];
-
-
     //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
     for (size_t ib = 0; ib < BasisSetSize; ++ib)
       psi[ib] = 0;
+    int iter=-1;
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
     {
       //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
@@ -676,22 +672,24 @@ struct SoaAtomicBasisSet
           coord_R[1] = CoordR[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
           coord_R[2] = CoordR[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
           r_new = std::sqrt(dot(dr_new, dr_new));
+          iter++;
           if (r_new >= Rmax)
             continue;
 
           
 
 #if defined (QMC_COMPLEX)
-          phase = dot(coord_R,SuperTwist);
-          sincos(phase, &s, &c);
-          std::complex<RealType> e_mikr(c, s);
+          //phase = dot(coord_R,SuperTwist);
+          //sincos(2*RealType(M_PI) *phase, &s, &c);
+          //std::complex<RealType> e_mikr(c, s);
+          std::complex<RealType> e_mikr_p=periodic_image_phase_factors[iter];
 #else
-          RealType e_mikr=1.0;
+          RealType e_mikr_p=1.0;
 #endif            
           Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
           MultiRnl->evaluate(r_new, phi_r);
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
-            psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]]*e_mikr;
+            psi[ib] +=  ylm_v[LM[ib]] * phi_r[NL[ib]] * e_mikr_p;
 
         }
       }
