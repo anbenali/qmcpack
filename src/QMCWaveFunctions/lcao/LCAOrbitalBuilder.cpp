@@ -746,6 +746,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       APP_ABORT("Requested Super Twist in XML and Super Twist in HDF5 do not Match!!! Aborting.");
     }
 
+    SuperTwistH5=SuperTwist;
     Matrix<ValueType> Ctemp(neigs, spo.getBasisSetSize());
     LoadFullCoefsFromH5(hin, setVal, SuperTwist, Ctemp);
 
@@ -888,8 +889,8 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist)
   ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
   int phase_idx = 0;
   int TransX, TransY, TransZ;
-  //RealType ConstVal=2*RealType(M_PI);
-  RealType ConstVal=1;
+  RealType ConstVal=2*RealType(M_PI);
+  //RealType ConstVal=1;
   for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
   {
     TransX = ((i % 2) * 2 - 1) * ((i + 1) / 2);
@@ -902,11 +903,11 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist)
         RealType s, c;
         PosType Val; 
 
-        Val[0] =  TransX * 3.566800000; 
-        Val[1] =  TransY * 3.566800000; 
-        Val[2] =  TransZ * 3.566800000; 
+        Val[0] =  TransX * SuperTwist[0]; 
+        Val[1] =  TransY * SuperTwist[1]; 
+        Val[2] =  TransZ * SuperTwist[2]; 
         
-        sincos(ConstVal*  (TransX * Val[0] * SuperTwist[0] + TransY * Val[1] * SuperTwist[1] + TransZ * Val[2] * SuperTwist[2]), &s, &c);
+        sincos(ConstVal*  ( Val[0] +  Val[1]  +  Val[2] ), &s, &c);
         PeriodicImagePhaseFactors.emplace_back(c, s);
         
       }

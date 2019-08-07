@@ -198,12 +198,12 @@ struct SoaAtomicBasisSet
           dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
           dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
         
-          coord_R[0] = CoordR[0] + TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
-          coord_R[1] = CoordR[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
-          coord_R[2] = CoordR[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
+          coord_R[0] =  TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
+          coord_R[1] =  TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
+          coord_R[2] =  TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
 
           r_new     = std::sqrt(dot(dr_new, dr_new));
-          RealType SupTwist= std::sqrt(dot(SuperTwist,SuperTwist));
+         // RealType SupTwist= std::sqrt(dot(SuperTwist,SuperTwist));
           iter++;
           //const size_t ib_max=NL.size();
           if (r_new >= Rmax)
@@ -225,19 +225,19 @@ struct SoaAtomicBasisSet
           phase = dot(coord_R,SuperTwist);
           sincos(phase, &s, &c);
           std::complex<double> i(0.0,1.0);
-          std::complex<RealType> e_mikr(c, s);
-          std::complex<RealType> e_mikr_p=periodic_image_phase_factors[iter];
+          std::complex<RealType> e_mikr_p(c, s);
+          //std::complex<RealType> e_mikr_p=periodic_image_phase_factors[iter];
 
-          std::complex<RealType> de_mikr_x, de_mikr_y, de_mikr_z;
+          //std::complex<RealType> de_mikr_x, de_mikr_y, de_mikr_z;
     
-          de_mikr_x=ValueType(i*SuperTwist[0])*e_mikr;
-          de_mikr_y=ValueType(i*SuperTwist[1])*e_mikr;
-          de_mikr_z=ValueType(i*SuperTwist[2])*e_mikr;
+          //de_mikr_x=ValueType(i*SuperTwist[0])*e_mikr;
+          //de_mikr_y=ValueType(i*SuperTwist[1])*e_mikr;
+          //de_mikr_z=ValueType(i*SuperTwist[2])*e_mikr;
 #else
           RealType e_mikr_p=1;
-          RealType e_mikr=1;
-          RealType de_mikr_x, de_mikr_y, de_mikr_z;
-          de_mikr_x=de_mikr_y=de_mikr_z=0.0;
+          //RealType e_mikr=1;
+          //RealType de_mikr_x, de_mikr_y, de_mikr_z;
+          //de_mikr_x=de_mikr_y=de_mikr_z=0.0;
 #endif 
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
           {
@@ -647,7 +647,6 @@ struct SoaAtomicBasisSet
     RealType* restrict phi_r = tempS.data(1);
 
     RealType s, c,phase;
-
     //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
     for (size_t ib = 0; ib < BasisSetSize; ++ib)
       psi[ib] = 0;
@@ -668,26 +667,27 @@ struct SoaAtomicBasisSet
           dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
           dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
 
-          coord_R[0] = CoordR[0] + TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
-          coord_R[1] = CoordR[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
-          coord_R[2] = CoordR[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
+          coord_R[0] =  TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
+          coord_R[1] =  TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
+          coord_R[2] =  TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
           r_new = std::sqrt(dot(dr_new, dr_new));
           iter++;
           if (r_new >= Rmax)
             continue;
 
           
-
+          
 #if defined (QMC_COMPLEX)
-          //phase = dot(coord_R,SuperTwist);
-          //sincos(2*RealType(M_PI) *phase, &s, &c);
-          //std::complex<RealType> e_mikr(c, s);
-          std::complex<RealType> e_mikr_p=periodic_image_phase_factors[iter];
+          phase = dot(coord_R,SuperTwist);
+          sincos(phase, &s, &c);
+          std::complex<RealType> e_mikr_p(c, s);
+          //std::complex<RealType> e_mikr_p=periodic_image_phase_factors[iter];
 #else
           RealType e_mikr_p=1.0;
-#endif            
+#endif           
           Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
           MultiRnl->evaluate(r_new, phi_r);
+//          e_mikr_p=1;
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
             psi[ib] +=  ylm_v[LM[ib]] * phi_r[NL[ib]] * e_mikr_p;
 

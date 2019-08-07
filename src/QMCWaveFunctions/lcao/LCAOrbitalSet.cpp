@@ -78,7 +78,30 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   else
   {
     Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
+    Vector<ValueType> Mytemp0(BasisSetSize);
+    //HERE TO BE REMOVED
     myBasisSet->evaluateV(P, iat, vTemp.data());
+ //    for (int i=0;i<BasisSetSize;i++){
+ //         app_log()<<"PRINT!!!   "<< vTemp.data()[i]<<std::endl;
+ //         Mytemp0[i]=vTemp.data()[i];
+ //    }
+
+//    Vector<ValueType> vTemp2(Temp.data(0), BasisSetSize);
+//    ParticleSet PP(P); 
+//    for (int i=0;i<3;i++)
+ //   {
+ //       PP.R[iat][i]+=P.Lattice.R(0,i);
+ //   }
+   
+
+  //   myBasisSet->evaluateV(PP, iat, vTemp2.data());
+   
+     //app_log()<<"PRINT!!!"<<P.Lattice.R(0,0)<<"  "<<P.Lattice.R(0,1)<<"  "<<P.Lattice.R(0,2)<<"  "<<std::endl;
+ //    for (int i=0;i<BasisSetSize;i++)
+ //         app_log()<<"PRINT!!!   "<< vTemp.data()[i]/Mytemp0[i]<<std::endl;
+      
+//     APP_ABORT("Too bad");  
+
     simd::gemv(*C, Temp.data(0), psi.data());
   }
 }
