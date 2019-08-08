@@ -635,7 +635,7 @@ struct SoaAtomicBasisSet
   
   }
 
-
+///
   template<typename LAT, typename T, typename PosType, typename VT>
   inline void evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi, const std::vector<double> CoordR)
   {
@@ -689,7 +689,7 @@ struct SoaAtomicBasisSet
           MultiRnl->evaluate(r_new, phi_r);
 //          e_mikr_p=1;
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
-            psi[ib] +=  ylm_v[LM[ib]] * phi_r[NL[ib]] * e_mikr_p;
+            psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]] * e_mikr_p;
 
         }
       }
