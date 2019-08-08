@@ -1,0 +1,238 @@
+Discarded 6 diffused primitive functions, 0 contracted functions
+#INFO: **** input file is /home/abenali/Work/Development/QMCPACK-Benali/qmcpack/tests/solids/diamondC_1x1x1-Gaussian_pp_ShiftedTwist/Gamma/dft-inputs/Carbon1x1x1-tw0.py ****
+#!/usr/bin/env python
+import numpy
+import h5py
+from pyscf.pbc import gto, scf, dft
+from pyscf.pbc import df 
+
+cell = gto.Cell()
+cell.a             = '''
+         3.37316115       3.37316115       0.00000000
+         0.00000000       3.37316115       3.37316115
+         3.37316115       0.00000000       3.37316115'''
+cell.atom = '''  
+   C        0.00000000       0.00000000       0.00000000
+   C        1.686580575      1.686580575      1.686580575 
+            ''' 
+cell.basis         = 'bfd-vdz'
+cell.ecp           = 'bfd'
+cell.unit          = 'B'
+cell.drop_exponent = 0.10
+cell.verbose       = 5
+cell.charge        = 0
+cell.spin          = 0
+cell.build()
+
+sp_twist=[0,0,0]
+twist = numpy.asarray([0.,0.,0.]) / 1.0
+kmesh=[1,1,1]
+kpts = cell.make_kpts((1,1,1), with_gamma_point=False,  wrap_around=True, scaled_center=twist)
+
+
+mf = scf.KRHF(cell,kpts)
+mf.exxdiv = 'ewald'
+mf.max_cycle = 200
+
+
+e_scf=mf.kernel()
+
+ener = open('e_scf','w')
+ener.write('%s\n' % (e_scf))
+print('e_scf',e_scf)
+ener.close()
+
+title="S1-twist0"
+from PyscfToQmcpack import savetoqmcpack
+savetoqmcpack(cell,mf,title=title,kmesh=kmesh,kpts=kpts,sp_twist=kpts)
+
+#INFO: ******************** input file end ********************
+
+
+System: ('Linux', 'abenali', '4.15.0-55-generic', '#60-Ubuntu SMP Tue Jul 2 18:22:20 UTC 2019', 'x86_64', 'x86_64')  Threads 8
+Python 2.7.15+ (default, Nov 27 2018, 23:36:35) 
+[GCC 7.3.0]
+numpy 1.14.0  scipy 1.0.0
+Date: Thu Aug  8 12:31:15 2019
+PySCF version 1.7.1
+PySCF path  /home/abenali/Work/src/pyscf/pyscf
+GIT ORIG_HEAD 6ba52f91efc4c372028067d89a3410cbf6c4f744
+GIT HEAD      ref: refs/heads/dev
+GIT dev branch  262e23471167864e983dfa0b7c13471750037576
+
+[CONFIG] conf_file None
+[INPUT] verbose = 5
+[INPUT] max_memory = 4000 
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 8
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = B
+[INPUT]  1 C      0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr
+[INPUT]  2 C      0.892500004670   0.892500004670   0.892500004670 AA    1.686580575000   1.686580575000   1.686580575000 Bohr
+[INPUT] ---------------- BASIS SET ---------------- 
+[INPUT] l, kappa, [nprim/nctr], expnt,             c_1 c_2 ...
+[INPUT] C
+[INPUT] 0    0    [8    /1   ]  13.073594         -0.000705
+                                6.541187          0.015176
+                                3.272791          -0.121499
+                                1.637494          -0.033512
+                                0.819297          0.180113
+                                0.409924          0.380369
+                                0.2051            0.397529
+                                0.102619          0.169852
+[INPUT] 0    0    [1    /1   ]  0.127852             1
+[INPUT] 1    0    [7    /1   ]  7.480076          0.021931
+                                3.741035          0.054425
+                                1.871016          0.112024
+                                0.935757          0.210979
+                                0.468003          0.289868
+                                0.234064          0.302667
+                                0.117063          0.191634
+[INPUT] 1    0    [1    /1   ]  0.149161             1
+[INPUT] 2    0    [1    /1   ]  0.561161             1
+
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+nuclear repulsion = -12.7756672328609
+number of shells = 10
+number of NR pGTOs = 76
+number of NR cGTOs = 26
+basis = bfd-vdz
+ecp = bfd
+CPU time:         0.75
+lattice vectors  a1 [3.373161150, 3.373161150, 0.000000000]
+                 a2 [0.000000000, 3.373161150, 3.373161150]
+                 a3 [3.373161150, 0.000000000, 3.373161150]
+dimension = 3
+low_dim_ft_type = None
+Cell volume = 76.7611
+exp_to_discard = 0.1
+rcut = 19.243077142883383 (nimgs = [5 5 5])
+lattice sum = 911 cells
+precision = 1e-08
+pseudo = None
+ke_cutoff = 357.28958447816603
+    = [34 34 34] mesh (39304 PWs)
+ew_eta = 2.61119
+ew_cut = 2.673899610122948 (nimgs = [1 1 1])
+
+
+******** <class 'pyscf.pbc.scf.khf.KRHF'> ********
+method = KRHF-KSCF-RHF-SCF-RHF
+initial guess = minao
+damping factor = 0
+level shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+DIIS start cycle = 1
+DIIS space = 8
+SCF tol = 1e-07
+SCF gradient tol = None
+max. SCF cycles = 200
+direct_scf = False
+chkfile to save SCF result = /home/abenali/Work/Development/QMCPACK-Benali/qmcpack/tests/solids/diamondC_1x1x1-Gaussian_pp_ShiftedTwist/Gamma/dft-inputs/tmpd_bYQ8
+max_memory 4000 MB (current use 64 MB)
+
+
+******** PBC SCF flags ********
+N kpts = 1
+kpts = [[0. 0. 0.]]
+Exchange divergence treatment (exxdiv) = ewald
+Ewald components = 2.3382937731203e-69, -1.47620749513098, 1.13640294140598
+    madelung (= occupied orbital energy shift) = 0.6796091074500152
+    Total energy shift due to Ewald probe charge = -1/2 * Nelec*madelung = -2.7184364298
+DF object = <pyscf.pbc.df.fft.FFTDF object at 0x14afb2b4fcd0>
+
+
+******** <class 'pyscf.pbc.df.fft.FFTDF'> ********
+mesh = [34 34 34] (39304 PWs)
+len(kpts) = 1
+Set gradient conv threshold to 0.000316228
+Big error detected in the electron number of initial guess density matrix (Ne/cell = 10.9584)!
+  This can cause huge error in Fock matrix and lead to instability in SCF for low-dimensional systems.
+  DM is normalized wrt the number of electrons 8.0
+cond(S) = [62153.80201876]
+Ewald components = 2.3382937731203e-69, -1.47620749513098, 1.13640294140598
+    CPU time for vj and vk     33.79 sec, wall time      4.25 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+E1 = 2.5615542037321974  E_coul = -6.483387634390971
+init E= -16.6975006635197
+    CPU time for initialize scf    186.33 sec, wall time     23.56 sec
+HOMO = 0.617728057064  LUMO = 0.885154571108
+     k-point                  mo_energy
+   0 ( 0.000  0.000  0.000)   [-1.9579454   0.61772718  0.61772806  0.61772806] [0.88515457 0.88515546 0.88515546 1.09638394 1.63583498 1.79994556
+ 1.79994556 2.16763586 2.16763793 2.16763793 2.62538401 2.62538778
+ 2.62538778 3.46427644 3.61402276 3.61402472 3.61402472 3.63906479
+ 3.63906479 4.70377809 4.70377849 4.70377849]
+Ewald components = 2.3382937731203e-69, -1.47620749513098, 1.13640294140598
+    CPU time for vj and vk     17.71 sec, wall time      2.24 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+E1 = 4.707162508966307  E_coul = -2.1593493926294305
+cycle= 1 E= -10.2278541165241  delta_E= 6.47  |g|= 0.266  |ddm|=  4.4
+    CPU time for cycle= 1     18.00 sec, wall time      2.27 sec
+HOMO = 0.269071250552  LUMO = 1.09625540992
+     k-point                  mo_energy
+   0 ( 0.000  0.000  0.000)   [-0.62092115  0.26907047  0.26907125  0.26907125] [1.09625541 1.09625607 1.09625607 1.39720613 1.64705343 1.85863376
+ 1.85863376 2.24945317 2.24945545 2.24945545 2.74463453 2.74463868
+ 2.74463868 3.41415647 3.64279303 3.64279493 3.64279493 3.71803547
+ 3.71803547 4.77689828 4.7768986  4.7768986 ]
+Ewald components = 2.3382937731203e-69, -1.47620749513098, 1.13640294140598
+    CPU time for vj and vk     17.38 sec, wall time      2.19 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+E1 = 4.782411096506425  E_coul = -2.2530389375926414
+cycle= 2 E= -10.2462950739472  delta_E= -0.0184  |g|= 0.047  |ddm|= 2.49
+    CPU time for cycle= 2     17.56 sec, wall time      2.21 sec
+HOMO = 0.251553803102  LUMO = 1.08690248006
+     k-point                  mo_energy
+   0 ( 0.000  0.000  0.000)   [-0.62982835  0.25155301  0.2515538   0.2515538 ] [1.08690248 1.08690318 1.08690318 1.38130958 1.64962697 1.85381144
+ 1.85381144 2.24273077 2.24273305 2.24273305 2.72750071 2.72750482
+ 2.72750482 3.41689534 3.63824873 3.63825062 3.63825062 3.70968118
+ 3.70968118 4.76845888 4.76845921 4.76845921]
+Ewald components = 2.3382937731203e-69, -1.47620749513098, 1.13640294140598
+    CPU time for vj and vk     17.49 sec, wall time      2.20 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+E1 = 4.795603555997989  E_coul = -2.2669761470489393
+cycle= 3 E= -10.2470398239119  delta_E= -0.000745  |g|= 0.00587  |ddm|= 0.352
+    CPU time for cycle= 3     17.65 sec, wall time      2.22 sec
+HOMO = 0.253477348327  LUMO = 1.08830766542
+     k-point                  mo_energy
+   0 ( 0.000  0.000  0.000)   [-0.62905284  0.25347655  0.25347735  0.25347735] [1.08830767 1.08830836 1.08830836 1.38327467 1.64914872 1.85440085
+ 1.85440085 2.24340689 2.24340917 2.24340917 2.72914554 2.72914966
+ 2.72914966 3.41619128 3.63870801 3.63870989 3.63870989 3.71092843
+ 3.71092843 4.76954266 4.76954298 4.76954298]
+Ewald components = 2.3382937731203e-69, -1.47620749513098, 1.13640294140598
+    CPU time for vj and vk     17.40 sec, wall time      2.19 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+E1 = 4.794943293567848  E_coul = -2.266324316430455
+cycle= 4 E= -10.2470482557236  delta_E= -8.43e-06  |g|= 0.000159  |ddm|= 0.0226
+    CPU time for cycle= 4     17.57 sec, wall time      2.21 sec
+HOMO = 0.253393651266  LUMO = 1.08828223841
+     k-point                  mo_energy
+   0 ( 0.000  0.000  0.000)   [-0.62907823  0.25339286  0.25339365  0.25339365] [1.08828224 1.08828293 1.08828293 1.38323056 1.6491532  1.85439114
+ 1.85439114 2.24343129 2.24343356 2.24343356 2.72910719 2.72911131
+ 2.72911131 3.41618891 3.63870299 3.63870488 3.63870488 3.71090982
+ 3.71090982 4.76952488 4.76952521 4.76952521]
+Ewald components = 2.3382937731203e-69, -1.47620749513098, 1.13640294140598
+    CPU time for vj and vk     17.69 sec, wall time      2.23 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+E1 = 4.794981015431978  E_coul = -2.266362044053609
+cycle= 5 E= -10.2470482614826  delta_E= -5.76e-09  |g|= 9.69e-06  |ddm|= 0.00187
+    CPU time for cycle= 5     17.87 sec, wall time      2.25 sec
+HOMO = 0.253402457832  LUMO = 1.08828121026
+     k-point                  mo_energy
+   0 ( 0.000  0.000  0.000)   [-0.62907811  0.25340166  0.25340246  0.25340246] [1.08828121 1.0882819  1.0882819  1.38322898 1.64915439 1.85439041
+ 1.85439041 2.24342142 2.24342369 2.24342369 2.72910612 2.72911024
+ 2.72911024 3.41619161 3.63870167 3.63870356 3.63870356 3.71090847
+ 3.71090847 4.76952354 4.76952387 4.76952387]
+Ewald components = 2.3382937731203e-69, -1.47620749513098, 1.13640294140598
+    CPU time for vj and vk     17.68 sec, wall time      2.22 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.559012492297
+E1 = 4.794977467007892  E_coul = -2.2663584956522764
+Extra cycle  E= -10.2470482615053  delta_E= -2.28e-11  |g|= 1.44e-06  |ddm|= 8.79e-05
+    CPU time for scf_cycle    292.95 sec, wall time     36.98 sec
+    CPU time for SCF    293.09 sec, wall time     37.00 sec
+converged SCF energy = -10.2470482615053
+('e_scf', -10.24704826150533)
+Using Python 2.x
+Wavefunction successfully saved to QMCPACK HDF5 Format
+Use: "convert4qmc -pyscf  S1-twist0.h5" to generate QMCPACK input files

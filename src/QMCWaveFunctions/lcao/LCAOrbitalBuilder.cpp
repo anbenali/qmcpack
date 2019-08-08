@@ -105,7 +105,7 @@ inline bool is_same(const xmlChar* a, const char* b) { return !strcmp((const cha
 
 
 LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur)
-    : SPOSetBuilder(comm), targetPtcl(els), sourcePtcl(ions), myBasisSet(nullptr), h5_path(""), doCuspCorrection(false)
+    : SPOSetBuilder(comm), targetPtcl(els), sourcePtcl(ions), myBasisSet(nullptr), h5_path(""), SuperTwist(0.0),  doCuspCorrection(false)
 {
   ClassName = "LCAOrbitalBuilder";
   ReportEngine PRE(ClassName, "createBasisSet");
@@ -113,7 +113,6 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   std::string keyOpt("NMO");       // Numerical Molecular Orbital
   std::string transformOpt("yes"); // Numerical Molecular Orbital
   std::string cuspC("no");         // cusp correction
-  PosType SuperTwist(0.0);         // Supertwist coordinates
   cuspInfo = "";                   // file with precalculated cusp correction info
   OhmmsAttributeSet aAttrib;
   aAttrib.add(keyOpt, "keyword");
@@ -129,7 +128,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   if (cur != NULL)
     aAttrib.put(cur);
 
-  if (std::abs(SuperTwist[0] - 0.0) >= 1e-6 || std::abs(SuperTwist[1] - 0.0) >= 1e-6 ||
+/*  if (std::abs(SuperTwist[0] - 0.0) >= 1e-6 || std::abs(SuperTwist[1] - 0.0) >= 1e-6 ||
       std::abs(SuperTwist[2] - 0.0) >= 1e-6)
   {
     std::string error_msg("You are attempting to use a Super Twist other than Gamma. "
@@ -137,7 +136,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
                           "Please contact developers for more details !!! Aborting.");
     APP_ABORT(error_msg.c_str());
   }
-
+*/
   radialOrbType = -1;
   if (transformOpt == "yes")
     radialOrbType = 0;
@@ -341,7 +340,7 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
     cur = cur->next;
   } // done with basis set
   mBasisSet->setBasisSetSize(-1);
-  mBasisSet->setPBCParams(PBCImages, PeriodicImagePhaseFactors);
+  mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors);
   return mBasisSet;
 }
 
@@ -423,9 +422,8 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
     hin.pop();
     hin.close();
   }
-
   mBasisSet->setBasisSetSize(-1);
-  mBasisSet->setPBCParams(PBCImages, PeriodicImagePhaseFactors);
+  mBasisSet->setPBCParams(PBCImages, SuperTwist, PeriodicImagePhaseFactors);
   return mBasisSet;
 }
 
@@ -744,6 +742,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       APP_ABORT("Requested Super Twist in XML and Super Twist in HDF5 do not Match!!! Aborting.");
     }
 
+    SuperTwistH5=SuperTwist;
     Matrix<ValueType> Ctemp(neigs, spo.getBasisSetSize());
     LoadFullCoefsFromH5(hin, setVal, SuperTwist, Ctemp);
 
@@ -886,6 +885,8 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist)
   ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
   int phase_idx = 0;
   int TransX, TransY, TransZ;
+  //RealType ConstVal=2*RealType(M_PI);
+  RealType ConstVal=1;
   for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
   {
     TransX = ((i % 2) * 2 - 1) * ((i + 1) / 2);
@@ -896,8 +897,13 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist)
       {
         TransZ = ((k % 2) * 2 - 1) * ((k + 1) / 2);
         RealType s, c;
-        RealType vec_scalar = (TransX * SuperTwist[0] + TransY * SuperTwist[1] + TransZ * SuperTwist[2]);
-        sincos(-2 * RealType(M_PI) * vec_scalar, &s, &c);
+        PosType Val; 
+
+        Val[0] =  TransX * SuperTwist[0]; 
+        Val[1] =  TransY * SuperTwist[1]; 
+        Val[2] =  TransZ * SuperTwist[2]; 
+        
+        sincos(ConstVal*  ( Val[0] +  Val[1]  +  Val[2] ), &s, &c);
         PeriodicImagePhaseFactors.emplace_back(c, s);
       }
     }
