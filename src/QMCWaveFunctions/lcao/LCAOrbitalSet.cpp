@@ -71,9 +71,9 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   else
   {
     Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
-    myBasisSet->evaluateV(P, iat, vTemp.data());
+  //  myBasisSet->evaluateV(P, iat, vTemp.data());
     ///Evaluate WF ratios for testing purpose. Returns global phase.                                                  
-    /*
+    
     Vector<ValueType> Mytemp0(BasisSetSize);                                                                          
     myBasisSet->evaluateV(P, iat, vTemp.data());                                                                      
      for (int i=0;i<BasisSetSize;i++){                                                                                
@@ -97,7 +97,7 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 
      APP_ABORT("Too bad");
      ///END OF LINES TO REMOVE/UNCOMMENT
-     */
+   
 
     simd::gemv(*C, Temp.data(0), psi.data());
   }

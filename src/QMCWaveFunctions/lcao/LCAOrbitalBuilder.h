@@ -58,11 +58,11 @@ private:
   ///Number of periodic Images for Orbital evaluation
   TinyVector<int, 3> PBCImages;
   ///Coordinates Super Twist
-  //TinyVector<double, 3> SuperTwist; 
   PosType SuperTwist; 
   ///Periodic Image Phase Factors. Correspond to the phase from the PBCImages. Computed only once.
   std::vector<ValueType> PeriodicImagePhaseFactors;
-
+  ///Store Lattice parameters from HDF5 to use in PeriodicImagePhaseFactors
+  Matrix<double> Lattice; 
 
   /// Enable cusp correction
   bool doCuspCorrection;

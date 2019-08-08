@@ -138,12 +138,11 @@ struct SoaAtomicBasisSet
 
 
   template<typename LAT, typename T, typename PosType, typename VGL>
-  //inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl, const std::vector<double> CoordR)
   inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl)
   {
     int TransX, TransY, TransZ;
 
-    PosType dr_new, coord_R;
+    PosType dr_new;
     T r_new;
 
     constexpr T cone(1);
@@ -195,13 +194,8 @@ struct SoaAtomicBasisSet
           dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
           dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
         
-          coord_R[0] =  TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
-          coord_R[1] =  TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
-          coord_R[2] =  TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
           r_new     = std::sqrt(dot(dr_new, dr_new));
-         // RealType SupTwist= std::sqrt(dot(SuperTwist,SuperTwist));
           iter++;
-          //const size_t ib_max=NL.size();
           if (r_new >= Rmax)
             continue;
 
@@ -213,25 +207,6 @@ struct SoaAtomicBasisSet
 
           const T rinv = cone / r_new;
 
-#if defined (QMC_COMPLEX)
-
-          phase = dot(coord_R,SuperTwist);
-          sincos(phase, &s, &c);
-          std::complex<double> i(0.0,1.0);
-          std::complex<RealType> e_mikr_p(c, s);
-          //std::complex<RealType> e_mikr_p=periodic_image_phase_factors[iter];
-
-          //std::complex<RealType> de_mikr_x, de_mikr_y, de_mikr_z;
-    
-          //de_mikr_x=ValueType(i*SuperTwist[0])*e_mikr;
-          //de_mikr_y=ValueType(i*SuperTwist[1])*e_mikr;
-          //de_mikr_z=ValueType(i*SuperTwist[2])*e_mikr;
-#else
-          RealType e_mikr_p=1;
-          //RealType e_mikr=1;
-          //RealType de_mikr_x, de_mikr_y, de_mikr_z;
-          //de_mikr_x=de_mikr_y=de_mikr_z=0.0;
-#endif 
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
           {
             const int nl(NL[ib]);
@@ -246,24 +221,14 @@ struct SoaAtomicBasisSet
             const T ang_z     = ylm_z[lm];
             const T vr        = phi[nl];
 
-            ///ORIGINAL (COMMENT IF YOU DONT USE PHASE HIGHER)
-            psi[ib] += ang * vr * e_mikr_p;
-            dpsi_x[ib] += (ang * gr_x  + vr * ang_x ) * e_mikr_p;
-            dpsi_y[ib] += (ang * gr_y  + vr * ang_y ) * e_mikr_p;
-            dpsi_z[ib] += (ang * gr_z  + vr * ang_z ) * e_mikr_p;
-            d2psi[ib] += (ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) + vr * ylm_l[lm]) * e_mikr_p;
+            ///periodic_image_phase_factors[iter] is computed in LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist). 
+            ///Since the Phase value is fixed with number of periodic images. It is computed only once in the Builder and stored.  
+            psi[ib] += ang * vr * periodic_image_phase_factors[iter];
+            dpsi_x[ib] += (ang * gr_x  + vr * ang_x ) * periodic_image_phase_factors[iter]; 
+            dpsi_y[ib] += (ang * gr_y  + vr * ang_y ) * periodic_image_phase_factors[iter];
+            dpsi_z[ib] += (ang * gr_z  + vr * ang_z ) * periodic_image_phase_factors[iter];
+            d2psi[ib] += (ang * (ctwo * drnloverr + d2phi[nl]) + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) + vr * ylm_l[lm]) * periodic_image_phase_factors[iter]; 
 
-/*
-           ///VALUE WITH PHASE
-           psi[ib] += ang * vr * e_mikr * e_mikr_p;
-           ///GRADIENT WITH PHASE
-           dpsi_x[ib] += (de_mikr_x * ( ang * vr ) + (ang * gr_x  + vr * ang_x ) * e_mikr)* e_mikr_p; 
-           dpsi_y[ib] += (de_mikr_y * ( ang * vr ) + (ang * gr_y  + vr * ang_y ) * e_mikr)* e_mikr_p; 
-           dpsi_z[ib] += (de_mikr_z * ( ang * vr ) + (ang * gr_z  + vr * ang_z ) * e_mikr)* e_mikr_p; 
-           ///LAPLACIAN WITH PHASE
-           d2psi[ib]  += (e_mikr*(-ang * vr *  SupTwist*SupTwist + vr * ylm_l[lm] + ctwo * (gr_x * ang_x + gr_y * ang_y + gr_z * ang_z) +  ang * (ctwo * drnloverr + d2phi[nl]) ) 
-          + ctwo * ( de_mikr_x * (ang_x * vr + ang * gr_x) + de_mikr_y * (ang_y * vr + ang * gr_y) + de_mikr_z * (ang_z * vr + ang * gr_z) ) )* e_mikr_p; 
-*/
           }
         }
       }
@@ -630,12 +595,11 @@ struct SoaAtomicBasisSet
 
 
   template<typename LAT, typename T, typename PosType, typename VT>
-  //inline void evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi, const std::vector<double> CoordR)
   inline void evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi)
   {
     int TransX, TransY, TransZ;
 
-    PosType dr_new,coord_R;
+    PosType dr_new;
     T r_new;
     RealType* restrict ylm_v = tempS.data(0);
     RealType* restrict phi_r = tempS.data(1);
@@ -661,28 +625,16 @@ struct SoaAtomicBasisSet
           dr_new[1] = dr[1] + TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
           dr_new[2] = dr[2] + TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
 
-          coord_R[0] =  TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0);
-          coord_R[1] =  TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1);
-          coord_R[2] =  TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2);
           r_new = std::sqrt(dot(dr_new, dr_new));
           iter++;
           if (r_new >= Rmax)
             continue;
 
-          
-#if defined (QMC_COMPLEX)
-          phase = dot(coord_R,SuperTwist);
-          sincos(phase, &s, &c);
-          std::complex<RealType> e_mikr_p(c, s);
-          //std::complex<RealType> e_mikr_p=periodic_image_phase_factors[iter];
-#else
-          RealType e_mikr_p=1.0;
-#endif           
           Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
           MultiRnl->evaluate(r_new, phi_r);
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
-            psi[ib] +=  ylm_v[LM[ib]] * phi_r[NL[ib]] * e_mikr_p;
-
+            psi[ib] +=  ylm_v[LM[ib]] * phi_r[NL[ib]] * periodic_image_phase_factors[iter]; 
+          
         }
       }
     }
