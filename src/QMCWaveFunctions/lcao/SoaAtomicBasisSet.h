@@ -147,7 +147,7 @@ struct SoaAtomicBasisSet
 
     constexpr T cone(1);
     constexpr T ctwo(2);
-    //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
+
 
     //one can assert the alignment
     RealType* restrict phi   = tempS.data(0);
@@ -177,6 +177,7 @@ struct SoaAtomicBasisSet
 
     RealType s, c,phase;
 
+    //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
     int iter=-1;
     for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
     {
@@ -198,6 +199,7 @@ struct SoaAtomicBasisSet
           iter++;
           if (r_new >= Rmax)
             continue;
+          
 
           //SIGN Change!!
           const T x = -dr_new[0], y = -dr_new[1], z = -dr_new[2];

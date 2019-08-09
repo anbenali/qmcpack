@@ -71,35 +71,34 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   else
   {
     Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
-  //  myBasisSet->evaluateV(P, iat, vTemp.data());
+//    myBasisSet->evaluateV(P, iat, vTemp.data());
+//    simd::gemv(*C, Temp.data(0), psi.data());
+
     ///Evaluate WF ratios for testing purpose. Returns global phase.                                                  
     
-    Vector<ValueType> Mytemp0(BasisSetSize);                                                                          
-    myBasisSet->evaluateV(P, iat, vTemp.data());                                                                      
-     for (int i=0;i<BasisSetSize;i++){                                                                                
-          app_log()<<"PRINT!!!   "<< vTemp.data()[i]<<std::endl;                                                      
-          Mytemp0[i]=vTemp.data()[i];                                                                                 
-     }
+    vgl_type vec1(BasisSetSize);
+    vgl_type vec2(BasisSetSize);
+    myBasisSet->evaluateVGL(P, iat, vec1);                                                                      
   
-    Vector<ValueType> vTemp2(Temp.data(0), BasisSetSize);
     ParticleSet PP(P);                                                                                                
+    //app_log()<<"PP before"<<PP.R[iat][0]<<"  "<<PP.R[iat][1]<<"   "<<PP.R[iat][2]<<std::endl;
     for (int i=0;i<3;i++)                                                                                             
     {                                                                                                                 
         PP.R[iat][i]+=P.Lattice.R(0,i);
     }
-    
-    
-     myBasisSet->evaluateV(PP, iat, vTemp2.data());                                                                   
+    //app_log()<<"PP before"<<PP.R[iat][0]<<"  "<<PP.R[iat][1]<<"   "<<PP.R[iat][2]<<std::endl;
+     PP.update();  
+     myBasisSet->evaluateVGL(PP, iat, vec2);                                                                   
                                                                                                                       
      app_log()<<"PRINT!!!"<<std::endl;
      for (int i=0;i<BasisSetSize;i++)
-          app_log()<<"PRINT!!!   "<< vTemp.data()[i]/Mytemp0[i]<<std::endl;
+          app_log()<<"PRINT!!!   "<<vec1.data(0)[i]<<"   "<<vec2.data(0)[i]<<"    " <<  vec1.data(0)[i]/vec2.data(0)[i]<<std::endl;
 
      APP_ABORT("Too bad");
      ///END OF LINES TO REMOVE/UNCOMMENT
    
 
-    simd::gemv(*C, Temp.data(0), psi.data());
+
   }
 }
 

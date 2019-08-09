@@ -403,7 +403,7 @@ void RadialOrbitalSetBuilder<COT>::addGaussian(xmlNodePtr cur)
   gset->putBasisGroup(cur);
   //Warning::Magic Number for max rmax of gaussians
   RealType r0 = find_cutoff(*gset, 100.);
-  m_rcut_safe = std::max(m_rcut_safe, r0);
+  m_rcut_safe = 10*std::max(m_rcut_safe, r0);
   radTemp.push_back(new A2NTransformer<RealType, gto_type>(gset));
   m_orbitals->RnlID.push_back(m_nlms);
 }
@@ -421,8 +421,8 @@ void RadialOrbitalSetBuilder<COT>::addGaussianH5(hdf_archive& hin)
   //m_rcut seems like it once served this purpose but is somehow
   //a class global variable even though it should apply here and
   //similar locations on a function by function basis.
-  RealType r0 = find_cutoff(*gset, 100.);
-  m_rcut_safe = std::max(m_rcut_safe, r0);
+  RealType r0 = find_cutoff(*gset, 100000.);
+  m_rcut_safe = 3*std::max(m_rcut_safe, r0);
   radTemp.push_back(new A2NTransformer<RealType, gto_type>(gset));
   m_orbitals->RnlID.push_back(m_nlms);
 }
@@ -449,7 +449,7 @@ void RadialOrbitalSetBuilder<COT>::finalize()
   // series of design decisions requiring a base class pointer here.
   OneDimGridBase<OHMMS_PRECISION_FULL>* grid_prec;
   grid_prec = new LogGrid<OHMMS_PRECISION_FULL>;
-  grid_prec->set(1.e-6, m_rcut_safe, 1001);
+  grid_prec->set(1.e-6, m_rcut_safe, 10001);
   multiset->initialize(*grid_prec, norbs);
 
   for (int ib = 0; ib < norbs; ++ib)
