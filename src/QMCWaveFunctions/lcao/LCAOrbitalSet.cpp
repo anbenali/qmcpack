@@ -82,17 +82,32 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   
     ParticleSet PP(P);                                                                                                
     //app_log()<<"PP before"<<PP.R[iat][0]<<"  "<<PP.R[iat][1]<<"   "<<PP.R[iat][2]<<std::endl;
-    for (int i=0;i<3;i++)                                                                                             
-    {                                                                                                                 
-        PP.R[iat][i]+=P.Lattice.R(0,i);
+    double scale_start=-1.0;
+    double scale_final=1.0;
+
+    int npoint=101;
+    double delta=(scale_final-scale_start)/(npoint-1.0);
+    int basis_num=0;
+    int target_particle=0;
+    int component=0;
+    app_log()<<" #scale     #X    #Y    #Z  #VAL "<<std::endl;                                                                
+    for(int i=0; i<npoint; i++)
+    {
+        double scale=scale_start+delta*i;
+        PP.R[target_particle][0]=P.R[target_particle][0]+scale*P.Lattice.R(0,0);
+        PP.R[target_particle][1]=P.R[target_particle][1]+scale*P.Lattice.R(0,1);
+        PP.R[target_particle][2]=P.R[target_particle][2]+scale*P.Lattice.R(0,2);
+        PP.update();
+        myBasisSet->evaluateVGL(PP, target_particle, vec2);
+    
+        app_log()<<" "<<scale<<" "<<PP.R[target_particle]<<" "<<vec2.data(component)[basis_num].real()<<" "<<vec2.data(component)[basis_num].imag()<<std::endl;                                                                
     }
     //app_log()<<"PP before"<<PP.R[iat][0]<<"  "<<PP.R[iat][1]<<"   "<<PP.R[iat][2]<<std::endl;
-     PP.update();  
-     myBasisSet->evaluateVGL(PP, iat, vec2);                                                                   
+     //PP.update();  
                                                                                                                       
-     app_log()<<"PRINT!!!"<<std::endl;
-     for (int i=0;i<BasisSetSize;i++)
-          app_log()<<"PRINT!!!   "<<vec1.data(0)[i]<<"   "<<vec2.data(0)[i]<<"    " <<  vec1.data(0)[i]/vec2.data(0)[i]<<std::endl;
+     //app_log()<<"PRINT!!!"<<std::endl;
+     //for (int i=0;i<BasisSetSize;i++)
+     //     app_log()<<"PRINT!!!   "<<vec1.data(0)[i]<<"   "<<vec2.data(0)[i]<<"    " <<  vec1.data(0)[i]/vec2.data(0)[i]<<std::endl;
 
      APP_ABORT("Too bad");
      ///END OF LINES TO REMOVE/UNCOMMENT

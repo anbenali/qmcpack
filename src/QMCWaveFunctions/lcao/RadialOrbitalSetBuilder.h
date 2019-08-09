@@ -403,7 +403,7 @@ void RadialOrbitalSetBuilder<COT>::addGaussian(xmlNodePtr cur)
   gset->putBasisGroup(cur);
   //Warning::Magic Number for max rmax of gaussians
   RealType r0 = find_cutoff(*gset, 100.);
-  m_rcut_safe = 10*std::max(m_rcut_safe, r0);
+  m_rcut_safe = std::max(m_rcut_safe, r0);
   radTemp.push_back(new A2NTransformer<RealType, gto_type>(gset));
   m_orbitals->RnlID.push_back(m_nlms);
 }
@@ -421,7 +421,7 @@ void RadialOrbitalSetBuilder<COT>::addGaussianH5(hdf_archive& hin)
   //m_rcut seems like it once served this purpose but is somehow
   //a class global variable even though it should apply here and
   //similar locations on a function by function basis.
-  RealType r0 = find_cutoff(*gset, 100000.);
+  RealType r0 = find_cutoff(*gset, 100.);
   m_rcut_safe = 3*std::max(m_rcut_safe, r0);
   radTemp.push_back(new A2NTransformer<RealType, gto_type>(gset));
   m_orbitals->RnlID.push_back(m_nlms);
