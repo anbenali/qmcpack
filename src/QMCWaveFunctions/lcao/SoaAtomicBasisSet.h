@@ -176,30 +176,32 @@ struct SoaAtomicBasisSet
     }
 
     RealType s, c,phase;
-
     //Phase_idx needs to be initialized at -1 as it has to be incremented first to comply with the if statement (r_new >=Rmax) 
     int iter=-1;
-    for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
+    //for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
+    for (int i = -3; i <= 3; i++) //loop Translation over X
     {
       //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
-      TransX = ((i % 2) * 2 - 1) * ((i + 1) / 2);
-      for (int j = 0; j <= PBCImages[1]; j++) //loop Translation over Y
+      TransX =i;// ((i % 2) * 2 - 1) * ((i + 1) / 2);
+      //for (int j = 0; j <= PBCImages[1]; j++) //loop Translation over Y
+      for (int j = -3; j <= 3; j++) //loop Translation over Y
       {
         //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
-        TransY = ((j % 2) * 2 - 1) * ((j + 1) / 2);
-        for (int k = 0; k <= PBCImages[2]; k++) //loop Translation over Z
+        TransY = j;//((j % 2) * 2 - 1) * ((j + 1) / 2);
+        //for (int k = 0; k <= PBCImages[2]; k++) //loop Translation over Z
+        for (int k = -3; k <= 3; k++) //loop Translation over Z
         {
           //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
-          TransZ    = ((k % 2) * 2 - 1) * ((k + 1) / 2);
-          dr_new[0] = dr[0] + (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
-          dr_new[1] = dr[1] + (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
-          dr_new[2] = dr[2] + (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
+          TransZ    =k;// ((k % 2) * 2 - 1) * ((k + 1) / 2);
+          dr_new[0] = dr[0] - (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
+          dr_new[1] = dr[1] - (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
+          dr_new[2] = dr[2] - (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
         
           r_new     = std::sqrt(dot(dr_new, dr_new));
           iter++;
-          if (r_new >= Rmax)
+          if (r_new >= Rmax){
             continue;
-          
+          }
 
           //SIGN Change!!
           const T x = -dr_new[0], y = -dr_new[1], z = -dr_new[2];
@@ -209,7 +211,8 @@ struct SoaAtomicBasisSet
 
           const T rinv = cone / r_new;
 
-          for (size_t ib = 0; ib < BasisSetSize; ++ib)
+          //for (size_t ib = 0; ib < BasisSetSize; ++ib)
+          for (size_t ib = 0; ib < 1; ++ib)
           {
             const int nl(NL[ib]);
             const int lm(LM[ib]);
@@ -226,6 +229,10 @@ struct SoaAtomicBasisSet
             ///periodic_image_phase_factors[iter] is computed in LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist). 
             ///Since the Phase value is fixed with number of periodic images. It is computed only once in the Builder and stored.  
             psi[ib] += ang * vr * periodic_image_phase_factors[iter];
+            app_log()<<TransX<<"  "<<TransY<<"  "<<TransZ<<"  "<<dr_new[0]<<"  "<<dr_new[1]<<"  "<<dr_new[2]<<"  "<<ang <<"  "<<vr <<"  "<< ang * vr * periodic_image_phase_factors[iter]<<std::endl;
+            app_log()<<TransX<<"  "<<TransY<<"  "<<TransZ<<"  "<<dr[0]<<"  "<< (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0))<<std::endl;
+            app_log()<<TransX<<"  "<<TransY<<"  "<<TransZ<<"  "<<dr[1]<<"  "<< (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1))<<std::endl;
+            app_log()<<TransX<<"  "<<TransY<<"  "<<TransZ<<"  "<<dr[2]<<"  "<< (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2))<<std::endl;
             dpsi_x[ib] += (ang * gr_x  + vr * ang_x ) * periodic_image_phase_factors[iter]; 
             dpsi_y[ib] += (ang * gr_y  + vr * ang_y ) * periodic_image_phase_factors[iter];
             dpsi_z[ib] += (ang * gr_z  + vr * ang_z ) * periodic_image_phase_factors[iter];

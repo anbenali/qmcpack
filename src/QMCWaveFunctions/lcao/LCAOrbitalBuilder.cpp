@@ -28,6 +28,7 @@
 #include "QMCWaveFunctions/lcao/AOBasisBuilder.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/lcao/MultiFunctorAdapter.h"
+#include <complex>
 #if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/lcao/LCAOrbitalSetWithCorrection.h"
 #include "QMCWaveFunctions/lcao/CuspCorrectionConstruction.h"
@@ -35,7 +36,7 @@
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"
 #include "Utilities/ProgressReportEngine.h"
-
+#include <math.h>
 namespace qmcplusplus
 {
 /** traits for a localized basis set; used by createBasisSet
@@ -745,7 +746,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       app_log() << "                  z :" << std::abs(SuperTwistH5[2] - SuperTwist[2]) << std::endl;
       APP_ABORT("Requested Super Twist in XML and Super Twist in HDF5 do not Match!!! Aborting.");
     }
-    SuperTwist=SuperTwistH5;
+    //SuperTwist=SuperTwistH5;
     Matrix<ValueType> Ctemp(neigs, spo.getBasisSetSize());
     LoadFullCoefsFromH5(hin, setVal, SuperTwist, Ctemp);
 
@@ -911,25 +912,37 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist )
   int phase_idx = 0;
   int TransX, TransY, TransZ;
   RealType phase;
-  for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
+  
+  //for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
+  for (int i = -3; i <= 3; i++) //loop Translation over X
   {
-    TransX = ((i % 2) * 2 - 1) * ((i + 1) / 2);
-    for (int j = 0; j <= PBCImages[1]; j++) //loop Translation over Y
+    TransX = i;//((i % 2) * 2 - 1) * ((i + 1) / 2);
+    //for (int j = 0; j <= PBCImages[1]; j++) //loop Translation over Y
+    for (int j = -3 ; j <= 3; j++) //loop Translation over Y
     {
-      TransY = ((j % 2) * 2 - 1) * ((j + 1) / 2);
-      for (int k = 0; k <= PBCImages[2]; k++) //loop Translation over Z
+      TransY = j;//((j % 2) * 2 - 1) * ((j + 1) / 2);
+      //for (int k = 0; k <= PBCImages[2]; k++) //loop Translation over Z
+      for (int k = -3; k <= 3; k++) //loop Translation over Z
       {
-        TransZ = ((k % 2) * 2 - 1) * ((k + 1) / 2);
+        TransZ = k;//((k % 2) * 2 - 1) * ((k + 1) / 2);
         RealType s, c;
         PosType Val; 
         Val[0] =  TransX * Lattice(0, 0) + TransY * Lattice(1, 0) + TransZ * Lattice(2, 0);               
         Val[1] =  TransX * Lattice(0, 1) + TransY * Lattice(1, 1) + TransZ * Lattice(2, 1);
         Val[2] =  TransX * Lattice(0, 2) + TransY * Lattice(1, 2) + TransZ * Lattice(2, 2);               
 
-        phase = dot(Val,SuperTwist);                                                                            
+        phase = dot(SuperTwist,Val);                                                                            
         sincos(phase, &s, &c);                                                                                      
-        app_log()<<"BEFORE:"<<c<<"  "<<s<<std::endl;
+
+
+        //std::complex<double>   phase=(std::cos(SuperTwist[0]*Val[0])+imagi*std::sin(SuperTwist[0]*Val[0]))
+         //                          *(std::cos(SuperTwist[1]*Val[1])+imagi*std::sin(SuperTwist[1]*Val[1]))
+          //                         *(std::cos(SuperTwist[2]*Val[2])+imagi*std::sin(SuperTwist[2]*Val[2]));
+
         PeriodicImagePhaseFactors.emplace_back(c, s);
+//        PeriodicImagePhaseFactors.emplace_back(phase.real(), phase.imag());
+
+
       }
     }
   }

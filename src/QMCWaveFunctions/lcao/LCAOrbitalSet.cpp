@@ -76,9 +76,10 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 
     ///Evaluate WF ratios for testing purpose. Returns global phase.                                                  
     
-    vgl_type vec1(BasisSetSize);
+    app_log()<<"===============================>Yes"<<std::endl;
+    //vgl_type vec1(BasisSetSize);
     vgl_type vec2(BasisSetSize);
-    myBasisSet->evaluateVGL(P, iat, vec1);                                                                      
+    //myBasisSet->evaluateVGL(P, iat, vec1);                                                                      
   
     ParticleSet PP(P);                                                                                                
     //app_log()<<"PP before"<<PP.R[iat][0]<<"  "<<PP.R[iat][1]<<"   "<<PP.R[iat][2]<<std::endl;
@@ -91,17 +92,17 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
     int target_particle=0;
     int component=0;
     app_log()<<" #scale     #X    #Y    #Z  #VAL "<<std::endl;                                                                
-    for(int i=0; i<npoint; i++)
-    {
-        double scale=scale_start+delta*i;
-        PP.R[target_particle][0]=P.R[target_particle][0]+scale*P.Lattice.R(0,0);
-        PP.R[target_particle][1]=P.R[target_particle][1]+scale*P.Lattice.R(0,1);
-        PP.R[target_particle][2]=P.R[target_particle][2]+scale*P.Lattice.R(0,2);
+    //for(int i=0; i<npoint; i++)
+    //{
+        double scale=scale_start+delta*0;
+        PP.R[target_particle][0]=6;//P.R[target_particle][0]+scale*P.Lattice.R(0,0);
+        PP.R[target_particle][1]=6;//P.R[target_particle][1]+scale*P.Lattice.R(0,1);
+        PP.R[target_particle][2]=6;//P.R[target_particle][2]+scale*P.Lattice.R(0,2);
         PP.update();
         myBasisSet->evaluateVGL(PP, target_particle, vec2);
     
         app_log()<<" "<<scale<<" "<<PP.R[target_particle]<<" "<<vec2.data(component)[basis_num].real()<<" "<<vec2.data(component)[basis_num].imag()<<std::endl;                                                                
-    }
+    //}
     //app_log()<<"PP before"<<PP.R[iat][0]<<"  "<<PP.R[iat][1]<<"   "<<PP.R[iat][2]<<std::endl;
      //PP.update();  
                                                                                                                       
