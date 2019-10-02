@@ -935,20 +935,13 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist )
         sincos(phase, &s, &c);                                                                                      
 
 
-        //std::complex<double>   phase=(std::cos(SuperTwist[0]*Val[0])+imagi*std::sin(SuperTwist[0]*Val[0]))
-         //                          *(std::cos(SuperTwist[1]*Val[1])+imagi*std::sin(SuperTwist[1]*Val[1]))
-          //                         *(std::cos(SuperTwist[2]*Val[2])+imagi*std::sin(SuperTwist[2]*Val[2]));
 
         PeriodicImagePhaseFactors.emplace_back(c, s);
-//        PeriodicImagePhaseFactors.emplace_back(phase.real(), phase.imag());
 
 
       }
     }
   }
-  for (int i=0;i <PeriodicImagePhaseFactors.size();i++)
-      app_log()<<"i="<<PeriodicImagePhaseFactors[i]<<std::endl;  
-
 
 #endif
 }

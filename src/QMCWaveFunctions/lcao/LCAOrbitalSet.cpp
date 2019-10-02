@@ -71,6 +71,20 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   else
   {
     Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
+    myBasisSet->evaluateV(P, iat, vTemp.data());
+    simd::gemv(*C, Temp.data(0), psi.data());
+  }
+}
+/*
+void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+{
+  if (Identity)
+  { //PAY ATTENTION TO COMPLEX
+    myBasisSet->evaluateV(P, iat, psi.data());
+  }
+  else
+  {
+    Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
 //    myBasisSet->evaluateV(P, iat, vTemp.data());
 //    simd::gemv(*C, Temp.data(0), psi.data());
 
@@ -95,9 +109,9 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
     //for(int i=0; i<npoint; i++)
     //{
         double scale=scale_start+delta*0;
-        PP.R[target_particle][0]=6;//P.R[target_particle][0]+scale*P.Lattice.R(0,0);
-        PP.R[target_particle][1]=6;//P.R[target_particle][1]+scale*P.Lattice.R(0,1);
-        PP.R[target_particle][2]=6;//P.R[target_particle][2]+scale*P.Lattice.R(0,2);
+        PP.R[target_particle][0]=0;//P.R[target_particle][0]+scale*P.Lattice.R(0,0);
+        PP.R[target_particle][1]=0;//P.R[target_particle][1]+scale*P.Lattice.R(0,1);
+        PP.R[target_particle][2]=0;//P.R[target_particle][2]+scale*P.Lattice.R(0,2);
         PP.update();
         myBasisSet->evaluateVGL(PP, target_particle, vec2);
     
@@ -112,12 +126,11 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 
      APP_ABORT("Too bad");
      ///END OF LINES TO REMOVE/UNCOMMENT
-   
-
 
   }
+     APP_ABORT("Jerk");
 }
-
+*/
 /** Find a better place for other user classes, Matrix should be padded as well */
 template<typename T, unsigned D>
 inline void Product_ABt(const VectorSoaContainer<T, D>& A, const Matrix<T>& B, VectorSoaContainer<T, D>& C)
@@ -517,6 +530,7 @@ inline void LCAOrbitalSet::evaluate_ionderiv_vgl_impl(const vghgh_type& temp,
     dlpsi[i][j][2] = -(gh_xxz[j]+gh_yyz[j]+gh_zzz[j]);
   }
 }
+////UNCOMMENT FOR ENERGY
 
 void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
                                          int first,
@@ -544,6 +558,67 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
   }
 }
 
+
+/*
+
+void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
+                                         int first,
+                                         int last,
+                                         ValueMatrix_t& logdet,
+                                         GradMatrix_t& dlogdet,
+                                         ValueMatrix_t& d2logdet)
+{
+  if (Identity)
+  {
+    for (size_t i = 0, iat = first; iat < last; i++, iat++)
+    {
+      myBasisSet->evaluateVGL(P, iat, Temp);
+      evaluate_vgl_impl(Temp, i, logdet, dlogdet, d2logdet);
+    }
+  }
+  else
+  {
+  //  for (size_t i = 0, iat = first; iat < last; i++, iat++)
+  //  {
+      int i=0;
+      Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
+
+
+
+      app_log()<<"===============================>Yes"<<std::endl;
+      vgl_type vec2(BasisSetSize);
+
+      ParticleSet PP(P);                                                                                                
+    double scale_start=-3.0;
+    double scale_final=3.0;
+    int npoint=1001;
+    double delta=(scale_final-scale_start)/(npoint-1.0);
+    int basis_num=0;
+    int target_particle=0;
+    int component=0;
+    app_log()<<" #scale     #X    #Y    #Z  #VAL "<<std::endl;                                                                
+
+    for(int i=0; i<npoint; i++)
+    {
+        double scale=scale_start+delta*i;
+        PP.R[target_particle][0]=PP.R[target_particle][1]=PP.R[target_particle][2]=scale*P.Lattice.R(0,0);
+        //PP.R[target_particle][0]=6;//P.R[target_particle][0]+scale*P.Lattice.R(0,0);
+        //PP.R[target_particle][1]=6;//P.R[target_particle][1]+scale*P.Lattice.R(0,1);
+        //PP.R[target_particle][2]=6;//P.R[target_particle][2]+scale*P.Lattice.R(0,2);
+        PP.update();
+        myBasisSet->evaluateVGL(PP, target_particle, vec2);
+    
+        app_log()<<" "<<scale<<" "<<PP.R[target_particle]<<" "<<vec2.data(component)[basis_num].real()<<" "<<vec2.data(component)[basis_num].imag()<<std::endl;                                                                
+    }
+
+     APP_ABORT("Too bad");
+      //myBasisSet->evaluateVGL(P, iat, Temp);
+     // Product_ABt(Temp, *C, Tempv);
+     // evaluate_vgl_impl(Tempv, i, logdet, dlogdet, d2logdet);
+  //  }
+  }
+}
+*/
 void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
                                          int first,
                                          int last,

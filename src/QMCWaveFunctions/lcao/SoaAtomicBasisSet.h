@@ -138,7 +138,7 @@ struct SoaAtomicBasisSet
 
 
   template<typename LAT, typename T, typename PosType, typename VGL>
-  inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl)
+  inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl,std::vector <double> gendisp)
   {
     int TransX, TransY, TransZ;
 
@@ -193,13 +193,18 @@ struct SoaAtomicBasisSet
         {
           //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
           TransZ    =k;// ((k % 2) * 2 - 1) * ((k + 1) / 2);
-          dr_new[0] = dr[0] - (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
-          dr_new[1] = dr[1] - (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
-          dr_new[2] = dr[2] - (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
-        
+          //dr_new[0] = dr[0] - (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
+          //dr_new[1] = dr[1] - (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
+          //dr_new[2] = dr[2] - (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
+
+          dr_new[0] = gendisp[0] - (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0));
+          dr_new[1] = gendisp[1] - (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1));
+          dr_new[2] = gendisp[2] - (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2));
+
           r_new     = std::sqrt(dot(dr_new, dr_new));
           iter++;
           if (r_new >= Rmax){
+            app_log()<<"SON OF BITCH"<<std::endl;
             continue;
           }
 
@@ -229,10 +234,10 @@ struct SoaAtomicBasisSet
             ///periodic_image_phase_factors[iter] is computed in LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist). 
             ///Since the Phase value is fixed with number of periodic images. It is computed only once in the Builder and stored.  
             psi[ib] += ang * vr * periodic_image_phase_factors[iter];
-            app_log()<<TransX<<"  "<<TransY<<"  "<<TransZ<<"  "<<dr_new[0]<<"  "<<dr_new[1]<<"  "<<dr_new[2]<<"  "<<ang <<"  "<<vr <<"  "<< ang * vr * periodic_image_phase_factors[iter]<<std::endl;
-            app_log()<<TransX<<"  "<<TransY<<"  "<<TransZ<<"  "<<dr[0]<<"  "<< (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0))<<std::endl;
-            app_log()<<TransX<<"  "<<TransY<<"  "<<TransZ<<"  "<<dr[1]<<"  "<< (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1))<<std::endl;
-            app_log()<<TransX<<"  "<<TransY<<"  "<<TransZ<<"  "<<dr[2]<<"  "<< (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2))<<std::endl;
+          //  app_log()<<TransX<<"  "<<TransY<<"  "<<TransZ<<"  "<<r_new<<"  "<<dr_new[0]<<"  "<<dr_new[1]<<"  "<<dr_new[2]<<"  "<<ang <<"  "<<vr <<"  "<< ang * vr * periodic_image_phase_factors[iter]<<std::endl;
+           // app_log()<<TransX<<"  "<<TransY<<"  "<<TransZ<<"  "<<dr[0]<<"  "<< (TransX * lattice.R(0, 0) + TransY * lattice.R(1, 0) + TransZ * lattice.R(2, 0))<<std::endl;
+            //app_log()<<TransX<<"  "<<TransY<<"  "<<TransZ<<"  "<<dr[1]<<"  "<< (TransX * lattice.R(0, 1) + TransY * lattice.R(1, 1) + TransZ * lattice.R(2, 1))<<std::endl;
+            //app_log()<<TransX<<"  "<<TransY<<"  "<<TransZ<<"  "<<dr[2]<<"  "<< (TransX * lattice.R(0, 2) + TransY * lattice.R(1, 2) + TransZ * lattice.R(2, 2))<<std::endl;
             dpsi_x[ib] += (ang * gr_x  + vr * ang_x ) * periodic_image_phase_factors[iter]; 
             dpsi_y[ib] += (ang * gr_y  + vr * ang_y ) * periodic_image_phase_factors[iter];
             dpsi_z[ib] += (ang * gr_z  + vr * ang_z ) * periodic_image_phase_factors[iter];
