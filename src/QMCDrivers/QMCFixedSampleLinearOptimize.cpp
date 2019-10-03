@@ -236,9 +236,9 @@ bool QMCFixedSampleLinearOptimize::run()
     //     reset params if necessary
     for (int i = 0; i < numParams; i++)
       optTarget->Params(i) = currentParameters[i];
-    myTimers[4]->start();
+    cost_function_timer_.start();
     RealType lastCost(optTarget->Cost(true));
-    myTimers[4]->stop();
+    cost_function_timer_.stop();
     //     if cost function is currently invalid continue
     Valid = optTarget->IsValid;
     if (!ValidCostFunction(Valid))
@@ -292,10 +292,10 @@ bool QMCFixedSampleLinearOptimize::run()
         Right(i, i) += std::exp(XS);
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
       RealType lowestEV(0);
-      myTimers[2]->start();
+      eigenvalue_timer_.start();
       lowestEV = getLowestEigenvector(Right, currentParameterDirections);
       Lambda   = getNonLinearRescale(currentParameterDirections, S);
-      myTimers[2]->stop();
+      eigenvalue_timer_.stop();
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
       for (int i = 0; i < numParams; i++)
@@ -331,7 +331,7 @@ bool QMCFixedSampleLinearOptimize::run()
         AbsFuncTol       = true;
         largeQuarticStep = bigChange / bigVec;
         LambdaMax        = 0.5 * Lambda;
-        myTimers[3]->start();
+        line_min_timer_.start();
         if (MinMethod == "quartic")
         {
           int npts(7);
@@ -341,7 +341,7 @@ bool QMCFixedSampleLinearOptimize::run()
         }
         else
           Valid = lineoptimization2();
-        myTimers[3]->stop();
+        line_min_timer_.stop();
         RealType biggestParameterChange = bigVec * std::abs(Lambda);
         if (biggestParameterChange > bigChange)
         {
@@ -529,21 +529,18 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   vmcEngine->process(qsave);
 
   bool success = true;
-  if (optTarget == 0)
-  {
+  //allways reset optTarget
 #if defined(QMC_CUDA)
-    if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W, Psi, H, myComm);
-    else
+  if (useGPU == "yes")
+    optTarget = std::make_unique<QMCCostFunctionCUDA>(W, Psi, H, myComm);
+  else
 #endif
-      optTarget = new QMCCostFunction(W, Psi, H, myComm);
-    optTarget->setStream(&app_log());
-    if (ReportToH5 == "yes")
-      optTarget->reportH5 = true;
-    success = optTarget->put(q);
-  }
+    optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
+  optTarget->setStream(&app_log());
   if (ReportToH5 == "yes")
     optTarget->reportH5 = true;
+  success = optTarget->put(q);
+
   return success;
 }
 
@@ -952,15 +949,11 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 #ifdef HAVE_LMY_ENGINE
   // call the engine to perform update
   EngineObj->wfn_update_compute();
-//std::cout << "optimization here 0.5" << std::endl;
 #else
   solveShiftsWithoutLMYEngine(shifts_i, shifts_s, parameterDirections);
 #endif
 
   // size update direction vector correctly
-  //for (int i = 0; i < EngineObj->good_solve().size(); i++)
-  //  app_log() << EngineObj->good_solve().at(i) << "  ";
-  //app_log() << endl;
   parameterDirections.resize(shifts_i.size());
   for (int i = 0; i < shifts_i.size(); i++)
   {
@@ -1011,11 +1004,6 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   // generate the new sample on which we will compare the different shifts
 
   finish();
-  // reset the number of samples
-  //this->optTarget->setNumSamples(nsamp_comp);
-  //nTargetSamples = nsamp_comp;
-  //app_log() << "# of sample before correlated sampling is " << nTargetSamples << std::endl;
-  //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
   app_log() << std::endl
             << "*************************************************************" << std::endl
             << "Generating a new sample based on the updated guiding function" << std::endl
@@ -1026,7 +1014,6 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   vmcEngine->getCommunicator()->setName(old_name + ".middleShift");
   start();
   vmcEngine->getCommunicator()->setName(old_name);
-  //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
 
   // say what we are doing
   app_log() << std::endl
@@ -1051,8 +1038,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
     for (int j = 0; j < parameterDirections.size(); j++)
     {
       if (j != central_index)
-        parameterDirections.at(j).at(i + 1) -= parameterDirections.at(1).at(i + 1);
-      //parameterDirections.at(2).at(i+1) -= parameterDirections.at(1).at(i+1);
+        parameterDirections.at(j).at(i + 1) -= parameterDirections.at(central_index).at(i + 1);
     }
   }
 
@@ -1063,20 +1049,14 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   for (int k = 0; k < parameterDirections.size(); k++)
   {
     for (int i = 0; i < numParams; i++)
-      optTarget->Params(i) = currParams.at(i) + (k == num_shifts ? 0.0 : parameterDirections.at(k).at(i + 1));
+      optTarget->Params(i) = currParams.at(i) + (k == central_index ? 0.0 : parameterDirections.at(k).at(i + 1));
     optTarget->IsValid = true;
     costValues.at(k)   = optTarget->LMYEngineCost(false, EngineObj);
     good_update.at(k) =
         (good_update.at(k) && std::abs((initCost - costValues.at(k)) / initCost) < max_relative_cost_change);
-    //app_log() << std::abs( (starting_cost - costValues.at(k)) / starting_cost ) << "  ";
     if (!good_update.at(k))
       costValues.at(k) = std::abs(1.5 * initCost) + 1.0;
   }
-  //app_log() << endl;
-
-  //for (int i = 0; i < good_update.size(); i++)
-  //  app_log() << good_update.at(i) << "  ";
-  //app_log() << endl;
 
   // find the best shift and the corresponding update direction
   const std::vector<RealType>* bestDirection = 0;

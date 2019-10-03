@@ -199,8 +199,6 @@ protected:
   bool AppendRun;
   ///flag to turn off dumping configurations
   bool DumpConfig;
-  ///true, if the size of population is fixed.
-  bool ConstPopulation;
   ///true, if it is a real QMC engine
   bool IsQMCDriver;
   /** the number of times this QMCDriver is executed
@@ -323,9 +321,6 @@ protected:
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
 
-  ///a list of timers
-  std::vector<NewTimer*> myTimers;
-
   ///temporary storage for drift
   ParticleSet::ParticlePos_t drift;
 
@@ -363,11 +358,9 @@ protected:
   bool finalize(int block, bool dumpwalkers = true);
 
   int rotation;
-  void adiosCheckpoint(int block);
-  void adiosCheckpointFinal(int block, bool dumpwalkers);
   std::string getRotationName(std::string RootName);
   std::string getLastRotationName(std::string RootName);
-
+  const std::string& get_root_name() const { return RootName; }
   NewTimer* checkpointTimer;
 };
 /**@}*/

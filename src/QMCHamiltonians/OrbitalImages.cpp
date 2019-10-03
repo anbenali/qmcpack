@@ -29,7 +29,7 @@ OrbitalImages::OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm) 
 }
 
 
-QMCHamiltonianBase* OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+OperatorBase* OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
 {
   //cloning shouldn't strictly be necessary, but do it right just in case
   OrbitalImages* clone = new OrbitalImages(*this);
@@ -84,7 +84,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      std::string name((const char*)(xmlGetProp(element, (const xmlChar*)"name")));
+      const XMLAttrString name(element, "name");
       if (name == "sposets")
         putContent(sposet_names, element);
       else if (name == "batch_size")
@@ -136,7 +136,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      std::string name((const char*)(xmlGetProp(element, (const xmlChar*)"name")));
+      const XMLAttrString name(element, "name");
       for (int i = 0; i < sposet_names.size(); ++i)
         if (name == sposet_names[i])
           putContent(*sposet_indices[i], element);

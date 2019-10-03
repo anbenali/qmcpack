@@ -26,16 +26,14 @@
 #include <Particle/MCWalkerConfiguration.h>
 #include <Estimators/BlockHistogram.h>
 #include <Estimators/accumulators.h>
+#include "type_traits/template_types.hpp"
+#include "Particle/Walker.h"
+#include "QMCDrivers/WalkerControlBase.h"
 #include <Utilities/NewTimer.h>
 #include <bitset>
 
-#ifdef HAVE_ADIOS
-#include <adios.h>
-#endif
-
 namespace qmcplusplus
 {
-class WalkerControlBase;
 class EstimatorManagerBase;
 
 /** Manages the state of QMC sections and handles population control for DMCs
@@ -52,6 +50,7 @@ class EstimatorManagerBase;
 struct SimpleFixedNodeBranch : public QMCTraits
 {
   typedef SimpleFixedNodeBranch ThisType;
+  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   /*! enum for booleans
    * \since 2008-05-05
@@ -151,9 +150,9 @@ struct SimpleFixedNodeBranch : public QMCTraits
   ///save xml element
   xmlNodePtr myNode;
   ///WalkerController
-  WalkerControlBase* WalkerController;
+  std::unique_ptr<WalkerControlBase> WalkerController;
   ///Backup WalkerController for mixed DMC
-  WalkerControlBase* BackupWalkerController;
+  std::unique_ptr<WalkerControlBase> BackupWalkerController;
   ///EstimatorManager
   EstimatorManagerBase* MyEstimator;
   ///a simple accumulator for energy
@@ -241,6 +240,10 @@ struct SimpleFixedNodeBranch : public QMCTraits
   /** determine trial and reference energies
    */
   void checkParameters(MCWalkerConfiguration& w);
+
+  /** determine trial and reference energies
+   */
+  void checkParameters(const int global_walkers, RefVector<MCPWalker>& walkers);
 
   /** return the bare branch weight
    *
@@ -390,10 +393,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   void write(const std::string& fname, bool overwrite = true);
 
-#ifdef HAVE_ADIOS
-  void save_energy();
-#endif
-
   void read(const std::string& fname);
 
   /** create map between the parameter name and variables */
@@ -406,22 +405,9 @@ struct SimpleFixedNodeBranch : public QMCTraits
 
   void setRN(bool rn);
 
-
-  //     void storeConfigsForForwardWalking(MCWalkerConfiguration& w);
-  //     void clearConfigsForForwardWalking( );
-  //     void debugFWconfig();
-  //     WalkerControlBase* getWalkerController()
-  //     {
-  //       return WalkerController;
-  //     }
-
 private:
   ///default constructor (disabled)
   SimpleFixedNodeBranch() {}
-
-  ///disable use by external users
-  //void write(hid_t grp, bool append=false);
-  //void read(hid_t grp);
 
   ///set branch cutoff, max, filter
   void setBranchCutoff(FullPrecRealType variance,

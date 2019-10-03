@@ -33,11 +33,8 @@ PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi, Ptc
     : WaveFunctionComponentBuilder(els, psi),
       ptclPool(psets),
       hfileID(-1),
-      rootNode(NULL)
-#if !defined(ENABLE_SMARTPOINTER)
-      ,
-      myBasisSet(0)
-#endif
+      rootNode(NULL),
+      myBasisSet(nullptr)
 {
   myParam = new PWParameterSet(myComm);
 }
@@ -69,9 +66,8 @@ bool PWOrbitalBuilder::put(xmlNodePtr cur)
     std::string cname((const char*)(cur->name));
     if (cname == "basisset")
     {
-      const xmlChar* aptr = xmlGetProp(cur, (const xmlChar*)"ecut");
-      if (aptr != NULL)
-        myParam->Ecut = atof((const char*)aptr);
+      const XMLAttrString a(cur, "ecut");
+      if (!a.empty()) myParam->Ecut = std::stod(a);
     }
     else if (cname == "coefficients")
     {
@@ -206,17 +202,10 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   HDFAttribIO<TinyVector<double, OHMMS_DIM>> hdfobj_twist(TwistAngle_DP);
   hdfobj_twist.read(hfileID, "/electrons/kpoint_0/reduced_k");
   TwistAngle = TwistAngle_DP;
-#if defined(ENABLE_SMARTPOINTER)
-  if (myBasisSet.get() == 0)
-  {
-    myBasisSet.reset(new PWBasis(TwistAngle));
-  }
-#else
-  if (myBasisSet == 0)
+  if (myBasisSet == nullptr)
   {
     myBasisSet = new PWBasis(TwistAngle);
   }
-#endif
   //Read the planewave basisset.
   //Note that the same data is opened here for each twist angle-avoids duplication in the
   //h5 file (which may become very large).
@@ -516,15 +505,12 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
 
 hid_t PWOrbitalBuilder::getH5(xmlNodePtr cur, const char* aname)
 {
-  const xmlChar* aptr = xmlGetProp(cur, (const xmlChar*)aname);
-  if (aptr == NULL)
-  {
-    return -1;
-  }
-  hid_t h = H5Fopen((const char*)aptr, H5F_ACC_RDONLY, H5P_DEFAULT);
+  const XMLAttrString a(cur, aname);
+  if (a.empty()) return -1;
+  hid_t h = H5Fopen(a.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   if (h < 0)
   {
-    app_error() << " Cannot open " << (const char*)aptr << " file." << std::endl;
+    app_error() << " Cannot open " << a << " file." << std::endl;
     OHMMS::Controller->abort();
   }
   myParam->checkVersion(h);

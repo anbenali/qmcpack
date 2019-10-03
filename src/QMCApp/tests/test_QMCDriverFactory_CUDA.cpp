@@ -70,16 +70,19 @@ TEST_CASE("QMCDriverFactory create VMC_CUDA Driver", "[qmcapp]")
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
   MinimalWaveFunctionPool wfp(comm);
-  WaveFunctionPool wavefunction_pool = wfp(particle_pool);
+  WaveFunctionPool wavefunction_pool = wfp(&particle_pool);
   MinimalHamiltonianPool mhp(comm);
-  HamiltonianPool hamiltonian_pool = mhp(particle_pool, wavefunction_pool);
+  HamiltonianPool hamiltonian_pool = mhp(&particle_pool, &wavefunction_pool);
   std::string target("e");
   MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
+
+  MCPopulation population(comm->size(), particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
+                            hamiltonian_pool.getPrimary());
 
   std::unique_ptr<QMCDriverInterface> last_driver;
   std::unique_ptr<QMCDriverInterface> qmc_driver;
   qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), 0, node, das, *qmc_system, particle_pool,
-                                           wavefunction_pool, hamiltonian_pool, comm);
+                                           wavefunction_pool, hamiltonian_pool, population, comm);
   REQUIRE(qmc_driver != nullptr);
 }
 

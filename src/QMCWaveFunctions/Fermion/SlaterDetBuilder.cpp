@@ -54,7 +54,7 @@ SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi, Ptc
     : WaveFunctionComponentBuilder(els, psi),
       ptclPool(psets),
       mySPOSetBuilderFactory(0),
-      slaterdet_0(0),
+      slaterdet_0(nullptr),
       multislaterdet_0(0),
       multislaterdetfast_0(0)
 {
@@ -476,11 +476,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     {
       //SPOSet[detname]=psi;
       app_log() << "  Create a new SPO set " << sposet << std::endl;
-#if defined(ENABLE_SMARTPOINTER)
-      psi.reset(mySPOSetBuilderFactory->createSPOSet(cur));
-#else
       psi = mySPOSetBuilderFactory->createSPOSet(cur);
-#endif
     }
     //psi->put(cur);
     psi->checkObject();
@@ -589,7 +585,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   targetPsi.setndelay(delay_rank);
 #endif
   slaterdet_0->add(adet, spin_group);
-  if (psi->Optimizable)
+  if (psi->isOptimizable())
     slaterdet_0->Optimizable = true;
 
   app_log() << std::endl;

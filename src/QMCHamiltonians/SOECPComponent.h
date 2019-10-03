@@ -12,7 +12,7 @@
 
 #ifndef QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
@@ -47,12 +47,12 @@ private:
   std::vector<RadialPotentialType*> sopp_m;
 
 public:
-  SOECPComponent(){};
 
-  ///destructor
-  ~SOECPComponent(){};
-
-  SOECPComponent* makeClone(const ParticleSet& qp){};
+  SOECPComponent* makeClone(const ParticleSet& qp)
+  {
+    APP_ABORT("SOECPComponent::makeClone not yet implemented");
+    return nullptr;
+  };
 
   ///add a new Spin-Orbit component
   void add(int l, RadialPotentialType* pp);
