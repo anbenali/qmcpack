@@ -178,38 +178,14 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
 
     const std::vector <double> coordR {((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
-    //const std::vector <double> coordR{6,6,6} ;
 
-    PosType  localdisp; 
-
-
+    std::vector<double> gendisp;
+    gendisp.resize(3); 
     for (int c = 0; c < NumCenters; c++){
-
-      RealType si, co;
-      RealType phase;
-    
-
-      localdisp[0]=-(displ[c][0]-(-ions_.R[c][0]+coordR[0]));
-      localdisp[1]=-(displ[c][1]-(-ions_.R[c][1]+coordR[1]));
-      localdisp[2]=-(displ[c][2]-(-ions_.R[c][2]+coordR[2]));
-
-      phase = dot(localdisp,SuperTwist);
-
-      sincos(phase, &si, &co);
-     // app_log()<<"ion"<<ions_.R[c]<<"   CoordR="<<coordR[0]<<"  "<<coordR[1]<<"  "<<coordR[2]<<"    displ="<<displ[c]<<std::endl;
-     // app_log()<<localdisp<<"   phase="<<phase<<" si="<<si<<" co="<<co<<std::endl;
-      QMCTraits::ValueType CorrectedPhase(co,si);
-     
-
-      LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl);
-      for (size_t ib = 0; ib < BasisSetSize; ++ib)
-      {
-          vgl.data(0)[ib]*=CorrectedPhase;
-          vgl.data(1)[ib]*=CorrectedPhase;
-          vgl.data(2)[ib]*=CorrectedPhase;
-          vgl.data(3)[ib]*=CorrectedPhase;
-          vgl.data(4)[ib]*=CorrectedPhase;
-      }
+      gendisp[0]=-ions_.R[c][0]+coordR[0];
+      gendisp[1]=-ions_.R[c][1]+coordR[1];
+      gendisp[2]=-ions_.R[c][2]+coordR[2];
+      LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl,gendisp);
    }
   }
 
@@ -240,7 +216,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    * @param trialMove if true, use Temp_r/Temp_dr
    */
   inline void evaluateVGHGH(const ParticleSet& P, int iat, vghgh_type& vghgh)
-{
+  {
    // APP_ABORT("SoaLocalizedBasisSet::evaluateVGH() not implemented\n");
     
     const auto& IonID(ions_.GroupID);
@@ -266,26 +242,13 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
 
     const std::vector <double> coordR {((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
-    PosType gendisp, localdisp; 
-
+    std::vector<double> gendisp;
+    gendisp.resize(3); 
     for (int c = 0; c < NumCenters; c++){
-
-      RealType si, co;
-      RealType phase;
-    
-      localdisp[0]=(displ[c][0]-(-ions_.R[c][0]+coordR[0]));
-      localdisp[1]=(displ[c][1]-(-ions_.R[c][1]+coordR[1]));
-      localdisp[2]=(displ[c][2]-(-ions_.R[c][2]+coordR[2]));
-
-      phase = dot(localdisp,SuperTwist);
-      sincos(phase, &si, &co);
-
-      QMCTraits::ValueType CorrectedPhase(co,si);
-
-      LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c]);
-      for (size_t i =0; i<BasisSetSize;i++)
-          vals[i]*=CorrectedPhase;
-
+      gendisp[0]=-ions_.R[c][0]+coordR[0];
+      gendisp[1]=-ions_.R[c][1]+coordR[1];
+      gendisp[2]=-ions_.R[c][2]+coordR[2];
+      LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c],gendisp);
    }
 
   }
@@ -310,10 +273,13 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
    
      
+    std::vector<double> gendisp; 
+    gendisp.resize(3);
+    gendisp[0]=gendisp[1]=gendisp[2]=0;
     //Since LCAO's are written only in terms of (r-R), ionic derivatives only exist for the atomic center
     //that we wish to take derivatives of.  Moreover, we can obtain an ion derivative by multiplying an electron
     //derivative by -1.0.  Handling this sign is left to LCAOrbitalSet.  For now, just note this is the electron VGL function.
-    LOBasisSet[IonID[jion]]->evaluateVGL(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vgl);
+    LOBasisSet[IonID[jion]]->evaluateVGL(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vgl,gendisp);
 
   }
 

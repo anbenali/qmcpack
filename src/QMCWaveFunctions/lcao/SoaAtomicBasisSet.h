@@ -138,7 +138,7 @@ struct SoaAtomicBasisSet
 
 
   template<typename LAT, typename T, typename PosType, typename VGL>
-  inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl)
+  inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl,std::vector <double> gendisp)
   {
     int TransX, TransY, TransZ;
 
@@ -226,6 +226,8 @@ struct SoaAtomicBasisSet
             const T ang_z     = ylm_z[lm];
             const T vr        = phi[nl];
 
+
+             SuperTwist[0]; //ANOUAR
             ///periodic_image_phase_factors[iter] is computed in LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist). 
             ///Since the Phase value is fixed with number of periodic images. It is computed only once in the Builder and stored.  
             psi[ib] += ang * vr * periodic_image_phase_factors[iter];
@@ -604,7 +606,7 @@ struct SoaAtomicBasisSet
 
 
   template<typename LAT, typename T, typename PosType, typename VT>
-  inline void evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi)
+  inline void evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi,std::vector<double> gendisp)
   {
     int TransX, TransY, TransZ;
 
