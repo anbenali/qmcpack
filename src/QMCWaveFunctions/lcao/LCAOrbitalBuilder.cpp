@@ -28,7 +28,6 @@
 #include "QMCWaveFunctions/lcao/AOBasisBuilder.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/lcao/MultiFunctorAdapter.h"
-#include <complex>
 #if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/lcao/LCAOrbitalSetWithCorrection.h"
 #include "QMCWaveFunctions/lcao/CuspCorrectionConstruction.h"
@@ -36,7 +35,11 @@
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"
 #include "Utilities/ProgressReportEngine.h"
+
+//REMOVE THE FOLLOWING INCLUDE BEFORE MERGE
+#include <complex>
 #include <math.h>
+
 namespace qmcplusplus
 {
 /** traits for a localized basis set; used by createBasisSet
@@ -130,15 +133,6 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   if (cur != NULL)
     aAttrib.put(cur);
 
-/*  if (std::abs(SuperTwist[0] - 0.0) >= 1e-6 || std::abs(SuperTwist[1] - 0.0) >= 1e-6 ||
-      std::abs(SuperTwist[2] - 0.0) >= 1e-6)
-  {
-    std::string error_msg("You are attempting to use a Super Twist other than Gamma. "
-                          "This feature is being implemented but not supported yet. "
-                          "Please contact developers for more details !!! Aborting.");
-    APP_ABORT(error_msg.c_str());
-  }
-*/
   radialOrbType = -1;
   if (transformOpt == "yes")
     radialOrbType = 0;
@@ -155,13 +149,11 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
 
   if (cuspC == "yes")
     doCuspCorrection = true;
-
   //Evaluate the Phase factor. Equals 1 for OBC.
   EvalPeriodicImagePhaseFactors(SuperTwist);
   // no need to wait but load the basis set
   if (h5_path != "")
     loadBasisSetFromH5();
-
 }
 
 LCAOrbitalBuilder::~LCAOrbitalBuilder()
@@ -732,7 +724,6 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 
     std::string setname("/Super_Twist/Coord");
     hin.read(SuperTwistH5, setname);
-
     if (std::abs(SuperTwistH5[0] - SuperTwist[0]) >= 1e-6 || std::abs(SuperTwistH5[1] - SuperTwist[1]) >= 1e-6 ||
         std::abs(SuperTwistH5[2] - SuperTwist[2]) >= 1e-6)
     {
@@ -929,11 +920,8 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist )
         phase = dot(SuperTwist,Val);                                                                            
         sincos(phase, &s, &c);                                                                                      
 
-
-
         PeriodicImagePhaseFactors.emplace_back(c, s);
-
-
+        app_log()<<" YES!!!!!   ("<<TransX<<"  "<<TransY<<"  "<<TransZ<<"  "<<c<<"," << s <<")"<<std::endl;
       }
     }
   }

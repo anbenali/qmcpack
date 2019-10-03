@@ -443,7 +443,7 @@ void RadialOrbitalSetBuilder<COT>::finalize()
   // series of design decisions requiring a base class pointer here.
   OneDimGridBase<OHMMS_PRECISION_FULL>* grid_prec;
   grid_prec = new LogGrid<OHMMS_PRECISION_FULL>;
-  grid_prec->set(1.e-6, m_rcut_safe, 10001);
+  grid_prec->set(1.e-6, m_rcut_safe, 1001);
   multiset->initialize(*grid_prec, norbs);
 
   for (int ib = 0; ib < norbs; ++ib)
