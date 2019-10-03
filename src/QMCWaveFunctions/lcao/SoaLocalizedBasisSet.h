@@ -241,8 +241,15 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
 
-    for (int c = 0; c < NumCenters; c++)
-      LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c]);
+    const std::vector <double> coordR {((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
+    std::vector<double> gendisp;
+    gendisp.resize(3); 
+    for (int c = 0; c < NumCenters; c++){
+      gendisp[0]=-ions_.R[c][0]+coordR[0];
+      gendisp[1]=-ions_.R[c][1]+coordR[1];
+      gendisp[2]=-ions_.R[c][2]+coordR[2];
+      LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c],gendisp);
+   }
 
   }
 
@@ -264,7 +271,8 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const auto& d_table = P.getDistTable(myTableIndex);
     const RealType* restrict dist    = (P.activePtcl == iat) ? d_table.Temp_r.data() : d_table.Distances[iat];
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
-    
+   
+     
     std::vector<double> gendisp; 
     gendisp.resize(3);
     gendisp[0]=gendisp[1]=gendisp[2]=0;

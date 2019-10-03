@@ -913,18 +913,15 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist )
   int TransX, TransY, TransZ;
   RealType phase;
   
-  //for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
-  for (int i = -3; i <= 3; i++) //loop Translation over X
+  for (int i = 0; i <= PBCImages[0]; i++) //loop Translation over X
   {
-    TransX = i;//((i % 2) * 2 - 1) * ((i + 1) / 2);
-    //for (int j = 0; j <= PBCImages[1]; j++) //loop Translation over Y
-    for (int j = -3 ; j <= 3; j++) //loop Translation over Y
+    TransX = ((i % 2) * 2 - 1) * ((i + 1) / 2);
+    for (int j = 0; j <= PBCImages[1]; j++) //loop Translation over Y
     {
-      TransY = j;//((j % 2) * 2 - 1) * ((j + 1) / 2);
-      //for (int k = 0; k <= PBCImages[2]; k++) //loop Translation over Z
-      for (int k = -3; k <= 3; k++) //loop Translation over Z
+      TransY = ((j % 2) * 2 - 1) * ((j + 1) / 2);
+      for (int k = 0; k <= PBCImages[2]; k++) //loop Translation over Z
       {
-        TransZ = k;//((k % 2) * 2 - 1) * ((k + 1) / 2);
+        TransZ = ((k % 2) * 2 - 1) * ((k + 1) / 2);
         RealType s, c;
         PosType Val; 
         Val[0] =  TransX * Lattice(0, 0) + TransY * Lattice(1, 0) + TransZ * Lattice(2, 0);               
