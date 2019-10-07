@@ -921,7 +921,6 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist )
         sincos(phase, &s, &c);                                                                                      
 
         PeriodicImagePhaseFactors.emplace_back(c, s);
-        app_log()<<" YES!!!!!   ("<<TransX<<"  "<<TransY<<"  "<<TransZ<<"  "<<c<<"," << s <<")"<<std::endl;
       }
     }
   }

@@ -59,8 +59,8 @@ SPOSet* LCAOrbitalSet::makeClone() const
   myclone->myBasisSet    = myBasisSet->makeClone();
   return myclone;
 }
-/*
-void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+
+/*void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   if (Identity)
   { //PAY ATTENTION TO COMPLEX
@@ -100,10 +100,10 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
     int basis_num=0;
     int target_particle=1;
     int component=0;
-    app_log()<<" #scale     #X    #Y    #Z  #VAL "<<std::endl;                                                                
-  //  for(int i=0; i<npoint; i++)
-  //  {
-        double scale=6;//scale_start+delta*i;
+    app_log()<<" #scale     #X    #Y    #Z  #AO_REAL  #AO_Imag   #MO_Real    #MO_imag   Grad_X_real Grad_X_imag "<<std::endl;                                                                
+    for(int i=0; i<npoint; i++)
+    {
+        double scale=scale_start+delta*i;
         PP.R[target_particle][0]=PP.R[target_particle][1]=PP.R[target_particle][2]=scale*P.Lattice.R(0,0);
         //PP.R[target_particle][0]=0;//P.R[target_particle][0]+scale*P.Lattice.R(0,0);
         //PP.R[target_particle][1]=0;//P.R[target_particle][1]+scale*P.Lattice.R(0,1);
@@ -111,10 +111,9 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
         PP.update();
         myBasisSet->evaluateVGL(PP, target_particle, vec2);
         simd::gemv(*C, vec2.data(0), psi.data());
-
-        app_log()<<" "<<scale*PP.Lattice.R(0,0)<<" "<<PP.R[target_particle]<<" "<<vec2.data(component)[basis_num].real()<<" "<<vec2.data(component)[basis_num].imag()<<std::endl;//" "<<val.data(component)[basis_num].real()<<" "<<psi.data(component)[basis_num].imag()<<std::endl;
-//    }
-     APP_ABORT("Too bad");
+        app_log()<<" "<<scale*PP.Lattice.R(0,0)<<" "<<PP.R[target_particle]<<" "<<vec2.data(component)[basis_num].real()<<" "<<vec2.data(component)[basis_num].imag()<<" "<<psi.data()->real()<<"  "<<psi.data()->imag()<<" "<<psi[1].real()<<"  "<<psi[1].imag()<<std::endl;
+    }
+     APP_ABORT("Too bad2");
   }
 }
 
@@ -544,8 +543,8 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
     }
   }
 }
-*/
 
+*/
 
 
 void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
