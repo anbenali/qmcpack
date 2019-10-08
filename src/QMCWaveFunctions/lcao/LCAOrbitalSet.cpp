@@ -60,7 +60,7 @@ SPOSet* LCAOrbitalSet::makeClone() const
   return myclone;
 }
 
-/*void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   if (Identity)
   { //PAY ATTENTION TO COMPLEX
@@ -73,7 +73,8 @@ SPOSet* LCAOrbitalSet::makeClone() const
     simd::gemv(*C, Temp.data(0), psi.data());
   }
 }
-*/
+
+/*
 void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   if (Identity)
@@ -116,6 +117,8 @@ void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
      APP_ABORT("Too bad2");
   }
 }
+*/
+
 
 /** Find a better place for other user classes, Matrix should be padded as well */
 template<typename T, unsigned D>
@@ -517,7 +520,6 @@ inline void LCAOrbitalSet::evaluate_ionderiv_vgl_impl(const vghgh_type& temp,
   }
 }
 ////UNCOMMENT FOR ENERGY
-/*
 void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
                                          int first,
                                          int last,
@@ -544,9 +546,7 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
   }
 }
 
-*/
-
-
+/*
 void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
                                          int first,
                                          int last,
@@ -563,7 +563,7 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
     }
   }
   else
-{
+  {
    
     Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
 //    myBasisSet->evaluateV(P, iat, vTemp.data());
@@ -579,7 +579,7 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
 
     int npoint=1001;
     double delta=(scale_final-scale_start)/(npoint-1.0);
-    int basis_num=0;
+    int basis_num=5;
     int target_particle=0;
     int component=0;
     app_log()<<" #scale     #X    #Y    #Z  #VAL "<<std::endl;                                                                
@@ -594,15 +594,17 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
         myBasisSet->evaluateVGL(PP, target_particle, vec2);
 
         Product_ABt(vec2, *C, Tempv);
-       // evaluate_vgl_impl(Tempv, target_particle, logdet, dlogdet, d2logdet);
+        //evaluate_vgl_impl(Tempv, target_particle, logdet, dlogdet, d2logdet);
 
         app_log()<<" "<<scale*PP.Lattice.R(0,0)<<" "<<PP.R[target_particle]<<" "<<vec2.data(component)[basis_num].real()<<" "<<vec2.data(component)[basis_num].imag()<<" "<<Tempv.data(component)[basis_num].real()<<" "<<Tempv.data(component)[basis_num].imag()<<std::endl;
 //        app_log()<<" "<<scale*PP.Lattice.R(0,0)<<" "<<PP.R[target_particle]<<" "<<Tempv.data(component)[basis_num].real()<<" "<<Tempv.data(component)[basis_num].imag()<<std::endl;                                                                
     }
      APP_ABORT("Too bad");
-    }
+  }
 
 }
+*/
+
 
 void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
                                          int first,
