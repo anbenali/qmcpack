@@ -179,13 +179,13 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 
     const std::vector <double> coordR {((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
 
-    PosType gendisp;
+    PosType Tv;
 
     for (int c = 0; c < NumCenters; c++){
-      gendisp[0]=(ions_.R[c][0]-coordR[0]);
-      gendisp[1]=(ions_.R[c][1]-coordR[1]);
-      gendisp[2]=(ions_.R[c][2]-coordR[2]);
-      LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl,gendisp);
+      Tv[0]=(ions_.R[c][0]-coordR[0])-displ[c][0];
+      Tv[1]=(ions_.R[c][1]-coordR[1])-displ[c][1]; 
+      Tv[2]=(ions_.R[c][2]-coordR[2])-displ[c][2]; 
+      LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice, dist[c], displ[c], BasisOffset[c], vgl,Tv);
    }
   }
 
@@ -233,10 +233,13 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   /** compute values for the iat-paricle move
    *
    * Always uses Temp_r and Temp_dr
-   * We Use gendispl as the global distance between electron and ion
-   * in opposition to the dr distance provided by the distance table
-   * Specifically to recover the phase factor for PBC with complex WF
-   * If no PBC, gendisp=dr (enforced in SoaAtomicBasisSet.h). 
+   * Tv is a translation vector; In PBC, in order to reduce the number
+   * of images that need to be summed over when generating the AO the 
+   * nearest image displacement, dr, is used. Tv corresponds to the 
+   * translation that takes the 'general displacement' (displacement
+   * between ion position and electron position) to the nearest image 
+   * displacement. We need to keep track of Tv because it must be add
+   * as a phase factor, i.e., exp(i*k*Tv).
    */
   inline void evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals)
   {
@@ -246,12 +249,13 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
 
     const std::vector <double> coordR {((P.activePtcl == iat) ? P.activePos : P.R[iat])[0],((P.activePtcl == iat) ? P.activePos : P.R[iat])[1],((P.activePtcl == iat) ? P.activePos : P.R[iat])[2]};
-    PosType gendisp;
+
+    PosType Tv;
     for (int c = 0; c < NumCenters; c++){
-      gendisp[0]=(ions_.R[c][0]-coordR[0])-displ[c][0];
-      gendisp[1]=(ions_.R[c][1]-coordR[1])-displ[c][1]; 
-      gendisp[2]=(ions_.R[c][2]-coordR[2])-displ[c][2]; 
-      LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c],gendisp);
+      Tv[0]=(ions_.R[c][0]-coordR[0])-displ[c][0];
+      Tv[1]=(ions_.R[c][1]-coordR[1])-displ[c][1]; 
+      Tv[2]=(ions_.R[c][2]-coordR[2])-displ[c][2]; 
+      LOBasisSet[IonID[c]]->evaluateV(P.Lattice, dist[c], displ[c], vals + BasisOffset[c],Tv);
    }
 
   }
@@ -276,12 +280,12 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const auto& displ                = (P.activePtcl == iat) ? d_table.Temp_dr : d_table.Displacements[iat];
   
      
-    PosType gendisp; 
-    gendisp[0]=gendisp[1]=gendisp[2]=0;
+    PosType Tv; 
+    Tv[0]=Tv[1]=Tv[2]=0;
     //Since LCAO's are written only in terms of (r-R), ionic derivatives only exist for the atomic center
     //that we wish to take derivatives of.  Moreover, we can obtain an ion derivative by multiplying an electron
     //derivative by -1.0.  Handling this sign is left to LCAOrbitalSet.  For now, just note this is the electron VGL function.
-    LOBasisSet[IonID[jion]]->evaluateVGL(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vgl,gendisp);
+    LOBasisSet[IonID[jion]]->evaluateVGL(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vgl,Tv);
 
   }
 
