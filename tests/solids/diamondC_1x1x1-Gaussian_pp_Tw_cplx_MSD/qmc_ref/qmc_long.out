@@ -10,9 +10,9 @@
       https://doi.org/10.1088/1361-648X/aab9c3
 
   Git branch: Complex_MSD_Coeffs
-  Last git commit: 3547f540e23166f15702426b5651b30cdfe5691a-dirty
-  Last git commit date: Fri Oct 18 17:10:41 2019 -0500
-  Last git commit subject: Remove useless warnings
+  Last git commit: 41176a8d8669807102ebb146d44d2513c0cee951-dirty
+  Last git commit date: Tue Oct 22 14:23:47 2019 -0500
+  Last git commit subject: Fix Mixed precision by forcing double precision in the read of Coefficients; Add test for 1x1x1 solid with complex WF and MSD complex
 =====================================================
   Global options 
 
@@ -21,7 +21,7 @@
   MPI group ID              = 0
   Number of ranks in group  = 1
   MPI ranks per node        = 1
-  OMP 1st level threads     = 16
+  OMP 1st level threads     = 8
   OMP nested threading disabled or only 1 thread on the 2nd level
 
   Precision used in this calculation, see definitions in the manual:
@@ -33,14 +33,14 @@
   Input XML = qmc_long.in.xml
 
   Project = qmc_long
-  date    = 2019-10-18 22:48:56 CDT
+  date    = 2019-10-24 11:11:07 CDT
   host    = abenali
 
  Random Number
  -------------
-  Offset for the random number seeds based on time: 936
+  Offset for the random number seeds based on time: 283
 
-  Range of prime numbers to use as seeds over processors and threads = 7369-7529
+  Range of prime numbers to use as seeds over processors and threads = 1867-1913
 
 
  Lattice
@@ -144,12 +144,12 @@ Reading CI expansion from HDF5:../MultiDet.h5
  Done reading CIs from H5!!
  Sorting unique CIs
  Done Sorting unique CIs
-Found 60399 terms in the MSD expansion.
-Norm of ci vector (sum of ci^2): (0.8774548075,0.3524795029)
-Found 2521 unique up determinants.
-Found 2521 unique down determinants.
-Number of terms in pairs array: 88
-Number of terms in pairs array: 88
+Found 137 terms in the MSD expansion.
+Norm of ci vector (sum of ci^2): (-0.7848180813,0.5808666223)
+Found 47 unique up determinants.
+Found 47 unique down determinants.
+Number of terms in pairs array: 29
+Number of terms in pairs array: 29
 CI coefficients are not optimizable. 
   Added a fermionic WaveFunctionComponent SlaterDet
   QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
@@ -237,7 +237,7 @@ QMCHamiltonian::addOperatorType added type pseudo named PseudoPot
 ParticleSetPool::randomize 
 <init source="ion0" target="e">
 </init>
-  Initialization Execution time = 1.2372 secs
+  Initialization Execution time = 0.2770 secs
 =========================================================
  Summary of QMC systems 
 =========================================================
@@ -245,14 +245,14 @@ ParticleSetPool has:
 
   ParticleSet 'e' contains 8 particles :  u(4) d(4)
 
-    u  5.0016653491e-01  9.3782903574e-01  4.8548540075e-01
-    u  3.0741952933e+00  2.9230547328e+00  5.7102674911e+00
-    u  2.5425416354e+00  4.3664614168e+00  4.6697686302e+00
-    u  2.4207036438e+00  2.3463842354e+00  2.3119671649e+00
-    d  1.0614732637e+00  3.8566868137e+00  3.4428990903e+00
-    d  8.7132088653e-01  4.7455881228e-01  6.1723559816e-01
-    d  2.3428692997e+00  2.4198366511e+00  2.3166651518e+00
-    d  2.2398191216e+00  2.6689395520e+00  1.9936373909e+00
+    u  3.3341542189e+00  1.0199883093e+00  2.8044008793e+00
+    u  1.0082316298e+00  3.2220853409e+00  3.9441524089e+00
+    u  2.4547534078e+00  4.3331777062e+00  4.5623473514e+00
+    u  2.4766318150e+00  4.7427277925e+00  4.2592998832e+00
+    d  3.4049289427e+00  5.5785092285e+00  3.3488841112e+00
+    d  3.9660426241e+00  3.0426171370e+00  9.5111416265e-01
+    d  2.0035437675e+00  4.6347743413e+00  4.0184334159e+00
+    d  2.1756191018e+00  2.2039452653e+00  2.6131662612e+00
 
   Distance table for dissimilar particles (A-B):
     source: ion0  target: e
@@ -289,23 +289,23 @@ ParticleSetPool has:
   File Root qmc_long.s000 append = no 
 =========================================================
 Resetting walkers
-  Adding 16 walkers to 0 existing sets
-  Total number of walkers: 1.6000000000e+01
-  Total weight: 1.6000000000e+01
+  Adding 8 walkers to 0 existing sets
+  Total number of walkers: 8.0000000000e+00
+  Total weight: 8.0000000000e+00
   Resetting Properties of the walkers 1 x 14
 
 <vmc function="put">
   qmc_counter=0  my_counter=0
   time step      = 1.0000000000e-01
-  blocks         = 100
-  steps          = 25
+  blocks         = 200
+  steps          = 100
   substeps       = 1
   current        = 0
   target samples = 0.0000000000e+00
-  walkers/mpi    = 16
+  walkers/mpi    = 8
 
-  stepsbetweensamples = 2525
-<parameter name="blocks" condition="int">100</parameter>
+  stepsbetweensamples = 20100
+<parameter name="blocks" condition="int">200</parameter>
 <parameter name="blocks_between_recompute" condition="int">0</parameter>
 <parameter name="check_properties" condition="int">100</parameter>
 <parameter name="checkproperties" condition="int">100</parameter>
@@ -313,14 +313,14 @@ Resetting walkers
 <parameter name="dmcwalkersperthread" condition="real">0.0000000000e+00</parameter>
 <parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
 <parameter name="record_configs" condition="int">0</parameter>
-<parameter name="record_walkers" condition="int">2525</parameter>
+<parameter name="record_walkers" condition="int">20100</parameter>
 <parameter name="recordconfigs" condition="int">0</parameter>
-<parameter name="recordwalkers" condition="int">2525</parameter>
+<parameter name="recordwalkers" condition="int">20100</parameter>
 <parameter name="rewind" condition="int">0</parameter>
 <parameter name="samples" condition="real">0.0000000000e+00</parameter>
 <parameter name="samplesperthread" condition="real">0.0000000000e+00</parameter>
-<parameter name="steps" condition="int">25</parameter>
-<parameter name="stepsbetweensamples" condition="int">2525</parameter>
+<parameter name="steps" condition="int">100</parameter>
+<parameter name="stepsbetweensamples" condition="int">20100</parameter>
 <parameter name="store_configs" condition="int">0</parameter>
 <parameter name="storeconfigs" condition="int">0</parameter>
 <parameter name="sub_steps" condition="int">1</parameter>
@@ -330,46 +330,46 @@ Resetting walkers
 <parameter name="timestep" condition="au">1.0000000000e-01</parameter>
 <parameter name="use_drift" condition="string">yes</parameter>
 <parameter name="usedrift" condition="string">yes</parameter>
-<parameter name="walkers" condition="int">16</parameter>
-<parameter name="warmup_steps" condition="int">100</parameter>
-<parameter name="warmupsteps" condition="int">100</parameter>
+<parameter name="walkers" condition="int">8</parameter>
+<parameter name="warmup_steps" condition="int">50</parameter>
+<parameter name="warmupsteps" condition="int">50</parameter>
   DumpConfig==false Nothing (configurations, state) will be saved.
-  Walker Samples are dumped every 2525 steps.
+  Walker Samples are dumped every 20100 steps.
 </vmc>
   Set drift_modifier UNR parameter a = 1.0000000000e+00
   Adding a default LocalEnergyEstimator for the MainEstimator 
-  CloneManager::makeClones makes 16 clones for W/Psi/H.
+  CloneManager::makeClones makes 8 clones for W/Psi/H.
   Cloning methods for both Psi and H are used
 ===== Memory Usage before cloning =====
-Available memory on node 0, free + buffers : 17355 MB
+Available memory on node 0, free + buffers : 18411 MB
 Memory footprint by rank 0 on node 0       : 104 MB
 ==================================================
 ===== Memory Usage after cloning =====
-Available memory on node 0, free + buffers : 17309 MB
-Memory footprint by rank 0 on node 0       : 150 MB
+Available memory on node 0, free + buffers : 18409 MB
+Memory footprint by rank 0 on node 0       : 107 MB
 ==================================================
-  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 
 
   Using Particle by Particle moves
   Walker moves with drift
   Total Sample Size   =0
-  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 
   Using Locality Approximation
 ===== Memory Usage after the buffer registration =====
-Available memory on node 0, free + buffers : 17288 MB
-Memory footprint by rank 0 on node 0       : 170 MB
+Available memory on node 0, free + buffers : 18408 MB
+Memory footprint by rank 0 on node 0       : 107 MB
 ==================================================
-  Anonymous Buffer size per walker : 1389520 Bytes.
-MEMORY increase 21 MB VMC::resetRun
+  Anonymous Buffer size per walker : 43664 Bytes.
+MEMORY increase 0 MB VMC::resetRun
 ====================================================
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 0
     time step          = 0.1
-    reference energy   = -11.8262
-    reference variance = 0.666141
+    reference energy   = -12.0038
+    reference variance = 0.564368
 ====================================================
-  QMC Execution time = 4.2348e+02 secs
-  Total Execution time = 4.2349e+02 secs
+  QMC Execution time = 5.4748e+02 secs
+  Total Execution time = 5.4749e+02 secs
 
 =========================================================
   A new xml input file : qmc_long.s000.cont.xml
