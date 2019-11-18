@@ -21,6 +21,7 @@
 #include "QMCTools/GamesXmlParser.h"
 #include "QMCTools/GamesAsciiParser.h"
 #include "QMCTools/QPParser.h"
+#include "QMCTools/QCHEMParser.h"
 #include "QMCTools/GamesFMOParser.h"
 #include "QMCTools/LCAOHDFParser.h"
 #include "QMCTools/BParser.h"
@@ -34,7 +35,7 @@ int main(int argc, char** argv)
 {
   if (argc < 2)
   {
-    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-QP|-pyscf|-orbitals] filename "
+    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-QP|-pyscf|-orbitals|-QChem] filename "
               << std::endl;
     std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
@@ -113,6 +114,11 @@ int main(int argc, char** argv)
     else if (a == "-QP")
     {
       parser  = new QPParser(argc, argv);
+      in_file = argv[++iargc];
+    }
+    else if (a == "-QChem")
+    {
+      parser  = new QCHEMParser(argc, argv);
       in_file = argv[++iargc];
     }
     else if (a == "-pyscf" || a == "-orbitals")

@@ -33,6 +33,7 @@ SET(MOSRCS
   BMakeFunc.cpp
   GamesFMOParser.cpp
   QPParser.cpp
+  QCHEMParser.cpp
   LCAOHDFParser.cpp
   convertpw4qmc.cpp 
   WriteEshdf.cpp
