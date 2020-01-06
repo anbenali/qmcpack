@@ -40,7 +40,7 @@ int main(int argc, char** argv)
     std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
     std::cout << "[-size npts -multidet multidet.h5 -ci file.out -threshold cimin -TargetState state_number "
-                 "-NaturalOrbitals NumToRead -optDetCoeffs]"
+                 "-NaturalOrbitals NumToRead -optDetCoeffs -BasisFile BasisFile]"
               << std::endl;
     std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState "
                  "0 -prefix sample"
@@ -69,6 +69,7 @@ int main(int argc, char** argv)
 
 
   std::string punch_file;
+  std::string basis_file;
   std::string psi_tag("psi0");
   std::string ion_tag("ion0");
   std::string jastrow("j");
@@ -84,7 +85,7 @@ int main(int argc, char** argv)
   bool multidetH5 = false;
   bool prod       = false;
   bool ci = false, zeroCI = false, orderByExcitation = false, fmo = false, addCusp = false, multidet = false,
-       optDetCoeffs = false;
+       optDetCoeffs = false, BasisFile = false;
   double thres      = 1e-20;
   int readNO        = 0; // if > 0, read Natural Orbitals from gamess output
   int readGuess     = 0; // if > 0, read Initial Guess from gamess output
@@ -169,6 +170,11 @@ int main(int argc, char** argv)
       ci         = true;
       punch_file = argv[++iargc];
     }
+    else if (a == "-BasisFile")
+    {
+      BasisFile   = true;
+      basis_file = argv[++iargc];
+    }
     else if (a == "-multidet")
     {
       multidet   = true;
@@ -179,13 +185,16 @@ int main(int argc, char** argv)
     {
       int temp;
       temp = atoi(argv[++iargc]);
-      temp += 1 - temp % 2;
+      if ( temp % 2 !=0) 
+          temp +=1;
       Image.push_back(temp);
       temp = atoi(argv[++iargc]);
-      temp += 1 - temp % 2;
+      if ( temp % 2 !=0) 
+          temp +=1;
       Image.push_back(temp);
       temp = atoi(argv[++iargc]);
-      temp += 1 - temp % 2;
+      if ( temp % 2 !=0) 
+          temp +=1;
       Image.push_back(temp);
     }
     else if (a == "-addCusp")
@@ -326,6 +335,8 @@ int main(int argc, char** argv)
       parser->multideterminant = multidet;
     parser->multidetH5        = multidetH5;
     parser->multih5file       = punch_file;
+    parser->basis_file         = basis_file;
+    parser->BasisFile         = BasisFile;
     parser->production        = prod;
     parser->ci_threshold      = thres;
     parser->optDetCoeffs      = optDetCoeffs;
