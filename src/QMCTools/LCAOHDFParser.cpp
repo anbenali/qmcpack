@@ -163,6 +163,8 @@ void LCAOHDFParser::parse(const std::string& fname)
     else
     {
       hin.read(ci_size, "NbDet");
+      hin.read(ci_nstates, "nstate");
+      hin.read(nbexcitedstates,"nexcitedstate");
       CIcoeff.clear();
       CIalpha.clear();
       CIbeta.clear();
@@ -170,7 +172,7 @@ void LCAOHDFParser::parse(const std::string& fname)
       CIalpha.resize(ci_size);
       CIbeta.resize(ci_size);
 
-      hin.read(ci_nstates, "nstate");
+/*
       /// 64 bit fixed width integer
       const unsigned bit_kind = 64;
       static_assert(bit_kind == sizeof(int64_t) * 8, "Must be 64 bit fixed width integer");
@@ -179,9 +181,12 @@ void LCAOHDFParser::parse(const std::string& fname)
       hin.read(N_int, "Nbits");
 
       Matrix<int64_t> tempAlpha(ci_size, N_int);
+      std::vector<int64_t> tempAlpha(ci_size);
       hin.read(tempAlpha, "CI_Alpha");
 
+
       Matrix<int64_t> tempBeta(ci_size, N_int);
+      std::vector<int64_t> tempBeta(ci_size);
       hin.read(tempBeta, "CI_Beta");
 
       std::string MyCItempAlpha, MyCItempBeta;
@@ -196,12 +201,14 @@ void LCAOHDFParser::parse(const std::string& fname)
           MyCItempAlpha[i] = '9';
           MyCItempBeta[i]  = '9';
         }
-        for (int k = 0; k < N_int; k++)
-        {
-          int64_t a                = tempAlpha[ni][k];
+        //for (int k = 0; k < N_int; k++)
+        //{
+          //int64_t a                = tempAlpha[ni][k];
+          int64_t a                = tempAlpha[ni];
           std::bitset<bit_kind> a2 = a;
 
-          auto b  = tempBeta[ni][k];
+          //auto b  = tempBeta[ni][k];
+          auto b  = tempBeta[ni];
           auto b2 = std::bitset<bit_kind>(b);
 
 
@@ -215,13 +222,13 @@ void LCAOHDFParser::parse(const std::string& fname)
               j++;
             }
           }
-        }
+        //}
 
         CIalpha[ni] = MyCItempAlpha;
         CIbeta[ni]  = MyCItempBeta;
       }
       hin.read(CIcoeff, "Coeff");
-
+      */
       int ds  = SpinMultiplicity - 1;
       int neb = (NumberOfEls - ds) / 2;
       int nea = NumberOfEls - NumberOfBeta;
