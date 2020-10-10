@@ -523,7 +523,7 @@ xmlNodePtr QMCGaussianParserBase::createDeterminantSetWithHDF5()
   xmlNewProp(udet, (const xmlChar*)"id", (const xmlChar*)"updet");
   xmlNewProp(udet, (const xmlChar*)"size", (const xmlChar*)up_size.str().c_str());
   if (DoCusp == true)
-    xmlNewProp(udet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../CuspCorrection/updet.cuspInfo.xml");
+    xmlNewProp(udet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../updet.cuspInfo.xml");
 
   //add occupation
   xmlNodePtr occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
@@ -560,7 +560,7 @@ xmlNodePtr QMCGaussianParserBase::createDeterminantSetWithHDF5()
     xmlSetProp(ddet, (const xmlChar*)"id", (const xmlChar*)"downdet");
     xmlSetProp(ddet, (const xmlChar*)"size", (const xmlChar*)down_size.str().c_str());
     if (DoCusp == true)
-      xmlSetProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
+      xmlSetProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../downdet.cuspInfo.xml");
   }
   else
   {
@@ -568,7 +568,7 @@ xmlNodePtr QMCGaussianParserBase::createDeterminantSetWithHDF5()
     xmlSetProp(ddet, (const xmlChar*)"id", (const xmlChar*)"downdet");
     xmlSetProp(ddet, (const xmlChar*)"size", (const xmlChar*)down_size.str().c_str());
     if (DoCusp == true)
-      xmlSetProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
+      xmlSetProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../downdet.cuspInfo.xml");
     xmlNodePtr o = xmlAddChild(ddet, xmlCopyNode(occ_data, 1));
     xmlNodePtr c = xmlCopyNode(coeff_data, 1);
     xmlSetProp(c, (const xmlChar*)"spindataset", (const xmlChar*)"1");
@@ -603,7 +603,7 @@ xmlNodePtr QMCGaussianParserBase::PrepareDeterminantSetFromHDF5()
   xmlNewProp(udet, (const xmlChar*)"id", (const xmlChar*)"updet");
   xmlNewProp(udet, (const xmlChar*)"size", (const xmlChar*)up_size.str().c_str());
   if (DoCusp == true)
-    xmlNewProp(udet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../CuspCorrection/updet.cuspInfo.xml");
+    xmlNewProp(udet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../updet.cuspInfo.xml");
 
   //add occupation
   xmlNodePtr occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
@@ -624,7 +624,7 @@ xmlNodePtr QMCGaussianParserBase::PrepareDeterminantSetFromHDF5()
     xmlSetProp(ddet, (const xmlChar*)"id", (const xmlChar*)"downdet");
     xmlSetProp(ddet, (const xmlChar*)"size", (const xmlChar*)down_size.str().c_str());
     if (DoCusp == true)
-      xmlSetProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
+      xmlSetProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../downdet.cuspInfo.xml");
   }
   else
   {
@@ -632,7 +632,7 @@ xmlNodePtr QMCGaussianParserBase::PrepareDeterminantSetFromHDF5()
     xmlSetProp(ddet, (const xmlChar*)"id", (const xmlChar*)"downdet");
     xmlSetProp(ddet, (const xmlChar*)"size", (const xmlChar*)down_size.str().c_str());
     if (DoCusp == true)
-      xmlSetProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
+      xmlSetProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../downdet.cuspInfo.xml");
     xmlNodePtr o = xmlAddChild(ddet, xmlCopyNode(occ_data, 1));
     xmlNodePtr c = xmlCopyNode(coeff_data, 1);
     xmlSetProp(c, (const xmlChar*)"spindataset", (const xmlChar*)"1");
@@ -656,7 +656,7 @@ xmlNodePtr QMCGaussianParserBase::createDeterminantSet()
   xmlNewProp(adet, (const xmlChar*)"id", (const xmlChar*)"updet");
   xmlNewProp(adet, (const xmlChar*)"size", (const xmlChar*)up_size.str().c_str());
   if (DoCusp == true)
-    xmlNewProp(adet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../CuspCorrection/updet.cuspInfo.xml");
+    xmlNewProp(adet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../updet.cuspInfo.xml");
 
   xmlNodePtr occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
   xmlNewProp(occ_data, (const xmlChar*)"mode", (const xmlChar*)"ground");
@@ -689,7 +689,7 @@ xmlNodePtr QMCGaussianParserBase::createDeterminantSet()
   xmlNewProp(adet, (const xmlChar*)"id", (const xmlChar*)"downdet");
   xmlNewProp(adet, (const xmlChar*)"size", (const xmlChar*)down_size.str().c_str());
   if (DoCusp == true)
-    xmlNewProp(adet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
+    xmlNewProp(adet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../downdet.cuspInfo.xml");
 
   {
     occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
@@ -740,8 +740,8 @@ void QMCGaussianParserBase::createSPOSets(xmlNodePtr spoUP, xmlNodePtr spoDN)
   xmlNewProp(spoDN, (const xmlChar*)"size", (const xmlChar*)nstates_beta.str().c_str());
   if (DoCusp == true)
   {
-    xmlNewProp(spoUP, (const xmlChar*)"cuspInfo", (const xmlChar*)"../CuspCorrection/spo-up.cuspInfo.xml");
-    xmlNewProp(spoDN, (const xmlChar*)"cuspInfo", (const xmlChar*)"../CuspCorrection/spo-dn.cuspInfo.xml");
+    xmlNewProp(spoUP, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-up.cuspInfo.xml");
+    xmlNewProp(spoDN, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-dn.cuspInfo.xml");
   }
   xmlNodePtr occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
   xmlNewProp(occ_data, (const xmlChar*)"mode", (const xmlChar*)"ground");
