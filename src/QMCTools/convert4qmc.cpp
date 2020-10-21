@@ -81,6 +81,7 @@ int main(int argc, char** argv)
   bool ci = false, zeroCI = false, orderByExcitation = false, addCusp = false, multidet = false,
        optDetCoeffs = false;
   double thres      = 1e-20;
+  bool gamess       = false;
   int readNO        = 0; // if > 0, read Natural Orbitals from gamess output
   int readGuess     = 0; // if > 0, read Initial Guess from gamess output
   std::vector<int> Image;
@@ -96,6 +97,7 @@ int main(int argc, char** argv)
     {
       parser  = new GamesAsciiParser(argc, argv);
       in_file = argv[++iargc];
+      gamess =true;
     }
     else if (a == "-orbitals")
     {
@@ -303,14 +305,16 @@ int main(int argc, char** argv)
   {
     parser->addJastrow = addJastrow;
     parser->WFS_name   = jastrow;
-    if (parser->PBC)
-    {
-      std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
-                << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
-      parser->dumpPBC(psi_tag, ion_tag);
-    }
+    if (gamess)
+          parser->dump(psi_tag, ion_tag);
     else
-      parser->dump(psi_tag, ion_tag);
+    {
+          if (parser->PBC)
+                std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
+                << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+
+          parser->dumpNew(psi_tag, ion_tag);
+    } 
     parser->dumpStdInputProd(psi_tag, ion_tag);
   }
   else
@@ -318,28 +322,33 @@ int main(int argc, char** argv)
     parser->addJastrow = false;
     jastrow            = "noj";
     parser->WFS_name   = jastrow;
-    if (parser->PBC)
-    {
-      std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
-                << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
-      parser->dumpPBC(psi_tag, ion_tag);
-    }
+    if (gamess)
+          parser->dump(psi_tag, ion_tag);
     else
-      parser->dump(psi_tag, ion_tag);
+    {
+          if (parser->PBC)
+                std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
+                << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+
+          parser->dumpNew(psi_tag, ion_tag);
+    }
     parser->dumpStdInput(psi_tag, ion_tag);
 
     parser->addJastrow = true;
     jastrow            = "j";
     parser->WFS_name   = jastrow;
-    if (parser->PBC)
-    {
-      std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
-                << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
-      parser->dumpPBC(psi_tag, ion_tag);
-    }
+    if (gamess)
+          parser->dump(psi_tag, ion_tag);
     else
-      parser->dump(psi_tag, ion_tag);
+    {
+          if (parser->PBC)
+                std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
+                << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+
+          parser->dumpNew(psi_tag, ion_tag);
+    }
     parser->dumpStdInput(psi_tag, ion_tag);
+
   }
 
 

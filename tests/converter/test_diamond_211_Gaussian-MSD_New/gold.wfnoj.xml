@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" twist="0.07761248  0.07761248  -0.07761248" PBCimages="8  8  8" href="C_diamond2x1x1-twist-Excited.h5">
+      <basisset name="LCAOBSet" key="GTO" transform="yes">
+        <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+      </basisset>
+      <sposet basisset="LCAOBSet" name="spo-RHF" size="52" spindataset="0">
+        <occupation mode="ground"/>
+      </sposet>
+    </sposet_collection>
+    <determinantset>
+      <multideterminant optimize="no" spo_up="spo-RHF" spo_dn="spo-RHF">
+        <detlist size="241" type="DETS" cutoff="1e-20" href="C_diamond2x1x1-twist-Excited.h5" ext_level="1"/>
+      </multideterminant>
+    </determinantset>
+  </wavefunction>
+</qmcsystem>

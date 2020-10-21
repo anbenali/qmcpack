@@ -152,9 +152,10 @@ struct QMCGaussianParserBase
 
   virtual void parse(const std::string& fname) = 0;
 
-  virtual void dumpPBC(const std::string& psi_tag, const std::string& ion_tag);
 
   virtual void dump(const std::string& psi_tag, const std::string& ion_tag);
+
+  virtual void dumpNew(const std::string& psi_tag, const std::string& ion_tag);
 
   void dumpStdInput(const std::string& psi_tag, const std::string& ion_tag);
 
