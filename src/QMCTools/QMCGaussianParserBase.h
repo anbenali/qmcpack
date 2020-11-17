@@ -71,7 +71,7 @@ struct QMCGaussianParserBase
   int numMO, readNO, readGuess, numMO2print;
   int ci_size, ci_nca, ci_ncb, ci_nea, ci_neb, ci_nstates;
   int NbKpts;
-  int nbexcitedstates; 
+  int nbexcitedstates;
   double ci_threshold;
 
 
@@ -155,6 +155,7 @@ struct QMCGaussianParserBase
 
   virtual void dump(const std::string& psi_tag, const std::string& ion_tag);
 
+  xmlNodePtr createXMLforSPOSet(const std::string& name, int size, int spin);
   virtual void dumpNew(const std::string& psi_tag, const std::string& ion_tag);
 
   void dumpStdInput(const std::string& psi_tag, const std::string& ion_tag);

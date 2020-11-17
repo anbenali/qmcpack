@@ -506,18 +506,18 @@ xmlNodePtr QMCGaussianParserBase::createBasisSet()
 
 xmlNodePtr QMCGaussianParserBase::createBasisSetWithHDF5()
 {
-  int counter = 0;
+  int counter     = 0;
   xmlNodePtr bset = xmlNewNode(NULL, (const xmlChar*)"basisset");
   xmlNewProp(bset, (const xmlChar*)"name", (const xmlChar*)"LCAOBSet");
   xmlNewProp(bset, (const xmlChar*)"key", (const xmlChar*)"GTO");
   xmlNewProp(bset, (const xmlChar*)"transform", (const xmlChar*)"yes");
   xmlNodePtr cur = NULL;
-  gridPtr = xmlNewNode(NULL, (const xmlChar*)"grid");
+  gridPtr        = xmlNewNode(NULL, (const xmlChar*)"grid");
   xmlNewProp(gridPtr, (const xmlChar*)"type", (const xmlChar*)"log");
   xmlNewProp(gridPtr, (const xmlChar*)"ri", (const xmlChar*)"1.e-6");
   xmlNewProp(gridPtr, (const xmlChar*)"rf", (const xmlChar*)"1.e2");
   xmlNewProp(gridPtr, (const xmlChar*)"npts", (const xmlChar*)"1001");
-  xmlAddChild(bset,gridPtr);
+  xmlAddChild(bset, gridPtr);
 
   hdf_archive hout;
   hout.open(h5file.c_str(), H5F_ACC_RDWR);
@@ -1584,6 +1584,33 @@ void QMCGaussianParserBase::createGridNode(int argc, char** argv)
   xmlNewProp(gridPtr, (const xmlChar*)"npts", (const xmlChar*)gridSize.c_str());
 }
 
+xmlNodePtr QMCGaussianParserBase::createXMLforSPOSet(const std::string& name, int size, int spin)
+{
+  std::ostringstream size_str, spin_str;
+  size_str << size;
+  spin_str << spin;
+  xmlNodePtr spoPtr = xmlNewNode(NULL, (const xmlChar*)"sposet");
+  xmlNewProp(spoPtr, (const xmlChar*)"basisset", (const xmlChar*)"LCAOBSet");
+  xmlNewProp(spoPtr, (const xmlChar*)"name", (const xmlChar*)name.c_str());
+  xmlNewProp(spoPtr, (const xmlChar*)"size", (const xmlChar*)size_str.str().c_str());
+  if (DoCusp)
+  {
+    std::string cusp_file("../" + name + ".cuspInfo.xml");
+    xmlNewProp(spoPtr, (const xmlChar*)"cuspInfo", (const xmlChar*)cusp_file.c_str());
+  }
+  // add occupation
+  xmlNodePtr occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
+  xmlNewProp(occ_data, (const xmlChar*)"mode", (const xmlChar*)"ground");
+  xmlAddChild(spoPtr, occ_data);
+
+  // add coefficients
+  xmlNodePtr coeff_data = xmlNewNode(NULL, (const xmlChar*)"coefficient");
+  xmlNewProp(coeff_data, (const xmlChar*)"spindataset", (const xmlChar*)spin_str.str().c_str());
+  xmlAddChild(spoPtr, coeff_data);
+
+  return spoPtr;
+}
+
 void QMCGaussianParserBase::dumpNew(const std::string& psi_tag, const std::string& ion_tag)
 {
   std::cout << " QMCGaussianParserBase::dumpNew " << std::endl;
@@ -1608,26 +1635,26 @@ void QMCGaussianParserBase::dumpNew(const std::string& psi_tag, const std::strin
   xmlNodePtr wfPtr = xmlNewNode(NULL, (const xmlChar*)"wavefunction");
   xmlNewProp(wfPtr, (const xmlChar*)"name", (const xmlChar*)psi_tag.c_str());
   xmlNewProp(wfPtr, (const xmlChar*)"target", (const xmlChar*)"e");
-  
+
   ///sposet_collection
-  xmlNodePtr sposetcoll = xmlNewNode(NULL, (const xmlChar*)"sposet_collection");
-  
-  xmlNewProp(sposetcoll, (const xmlChar*)"type", (const xmlChar*)"MolecularOrbital");
-  xmlNewProp(sposetcoll, (const xmlChar*)"name", (const xmlChar*)"LCAOBSet");
-  xmlNewProp(sposetcoll, (const xmlChar*)"source", (const xmlChar*)ion_tag.c_str());
+  xmlNodePtr sposet_coll = xmlNewNode(NULL, (const xmlChar*)"sposet_collection");
+
+  xmlNewProp(sposet_coll, (const xmlChar*)"type", (const xmlChar*)"MolecularOrbital");
+  xmlNewProp(sposet_coll, (const xmlChar*)"name", (const xmlChar*)"LCAOBSet");
+  xmlNewProp(sposet_coll, (const xmlChar*)"source", (const xmlChar*)ion_tag.c_str());
   if (PBC)
   {
-      std::stringstream ss, sss;
-      ss << std::setprecision(10) << STwist_Coord[0] << "  " << std::setprecision(10) << STwist_Coord[1] << "  "
-         << std::setprecision(10) << STwist_Coord[2];
-      xmlNewProp(sposetcoll, (const xmlChar*)"twist", (const xmlChar*)(ss.str()).c_str());
-      sss << Image[0] << "  " << Image[1] << "  " << Image[2];
-      xmlNewProp(sposetcoll, (const xmlChar*)"PBCimages", (const xmlChar*)(sss.str()).c_str());
+    std::stringstream ss, sss;
+    ss << std::setprecision(10) << STwist_Coord[0] << "  " << std::setprecision(10) << STwist_Coord[1] << "  "
+       << std::setprecision(10) << STwist_Coord[2];
+    xmlNewProp(sposet_coll, (const xmlChar*)"twist", (const xmlChar*)(ss.str()).c_str());
+    sss << Image[0] << "  " << Image[1] << "  " << Image[2];
+    xmlNewProp(sposet_coll, (const xmlChar*)"PBCimages", (const xmlChar*)(sss.str()).c_str());
   }
   if (DoCusp == true)
-    xmlNewProp(sposetcoll, (const xmlChar*)"cuspCorrection", (const xmlChar*)"yes");
-  xmlNewProp(sposetcoll, (const xmlChar*)"href", (const xmlChar*)h5file.c_str());
-  
+    xmlNewProp(sposet_coll, (const xmlChar*)"cuspCorrection", (const xmlChar*)"yes");
+  xmlNewProp(sposet_coll, (const xmlChar*)"href", (const xmlChar*)h5file.c_str());
+
 
   ///BASISSET
   xmlNodePtr bset = xmlNewNode(NULL, (const xmlChar*)"basisset");
@@ -1641,138 +1668,104 @@ void QMCGaussianParserBase::dumpNew(const std::string& psi_tag, const std::strin
   xmlNewProp(gridPtr, (const xmlChar*)"ri", (const xmlChar*)"1.e-6");
   xmlNewProp(gridPtr, (const xmlChar*)"rf", (const xmlChar*)"1.e2");
   xmlNewProp(gridPtr, (const xmlChar*)"npts", (const xmlChar*)"1001");
-  xmlAddChild(bset,gridPtr);
-  xmlAddChild(sposetcoll,bset);
-  ///Sposet
-  std::ostringstream up_size, down_size, b_size, occ, nstates_alpha, nstates_beta;
+  xmlAddChild(bset, gridPtr);
+  xmlAddChild(sposet_coll, bset);
+  ///Sposet collection
+  int sposet_size;
   if (multideterminant)
-      up_size << ci_nstates; 
+    sposet_size = ci_nstates;
   else
-      up_size << numMO;
+    sposet_size = numMO;
 
-  if (!SpinRestricted)  
+  if (!SpinRestricted)
   {
-         xmlNodePtr spoupPtr = xmlNewNode(NULL, (const xmlChar*)"sposet");
-         xmlNewProp(spoupPtr, (const xmlChar*)"basisset", (const xmlChar*)"LCAOBSet");
-         xmlNewProp(spoupPtr, (const xmlChar*)"name", (const xmlChar*)"spo-up");
-         xmlNewProp(spoupPtr, (const xmlChar*)"size", (const xmlChar*)up_size.str().c_str());
-         xmlNewProp(spoupPtr, (const xmlChar*)"spindataset", (const xmlChar*)"0");
-         if (DoCusp == true)
-           xmlNewProp(spoupPtr, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-up.cuspInfo.xml");
-         xmlNodePtr occ_dataup = xmlNewNode(NULL, (const xmlChar*)"occupation");
-         xmlNewProp(occ_dataup, (const xmlChar*)"mode", (const xmlChar*)"ground");
-         xmlAddChild(spoupPtr, occ_dataup);
-         xmlAddChild(sposetcoll,spoupPtr);
-
-         xmlNodePtr spodnPtr = xmlNewNode(NULL, (const xmlChar*)"sposet");
-         xmlNewProp(spodnPtr, (const xmlChar*)"basisset", (const xmlChar*)"LCAOBSet");
-         xmlNewProp(spodnPtr, (const xmlChar*)"name", (const xmlChar*)"spo-dn");
-         xmlNewProp(spodnPtr, (const xmlChar*)"size", (const xmlChar*)up_size.str().c_str());
-         xmlNewProp(spodnPtr, (const xmlChar*)"spindataset", (const xmlChar*)"1");
-         if (DoCusp == true)
-           xmlNewProp(spodnPtr, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-dn.cuspInfo.xml");
-         xmlNodePtr occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
-         xmlNewProp(occ_data, (const xmlChar*)"mode", (const xmlChar*)"ground");
-         xmlAddChild(spodnPtr, occ_data);
-         xmlAddChild(sposetcoll,spodnPtr);
-
+    xmlAddChild(sposet_coll, createXMLforSPOSet("spo-up", sposet_size, 0));
+    xmlAddChild(sposet_coll, createXMLforSPOSet("spo-dn", sposet_size, 1));
   }
   else
-  {
-         xmlNodePtr spoupPtr = xmlNewNode(NULL, (const xmlChar*)"sposet");
-         xmlNewProp(spoupPtr, (const xmlChar*)"basisset", (const xmlChar*)"LCAOBSet");
-         xmlNewProp(spoupPtr, (const xmlChar*)"name", (const xmlChar*)"spo-RHF");
-         xmlNewProp(spoupPtr, (const xmlChar*)"size", (const xmlChar*)up_size.str().c_str());
-         xmlNewProp(spoupPtr, (const xmlChar*)"spindataset", (const xmlChar*)"0");
-         if (DoCusp == true)
-           xmlNewProp(spoupPtr, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-up.cuspInfo.xml");
-         xmlNodePtr occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
-         xmlNewProp(occ_data, (const xmlChar*)"mode", (const xmlChar*)"ground");
-         xmlAddChild(spoupPtr, occ_data);
-         xmlAddChild(sposetcoll,spoupPtr);
-  }
-  xmlAddChild(wfPtr, sposetcoll);
+    xmlAddChild(sposet_coll, createXMLforSPOSet("spo-RHF", sposet_size, 0));
+  xmlAddChild(wfPtr, sposet_coll);
   ///DeterminantSet
   xmlNodePtr detset = xmlNewNode(NULL, (const xmlChar*)"determinantset");
   if (multideterminant)
   {
-         std::ostringstream cisize,  ci_thr;
-         cisize << ci_size;
-         ci_thr << ci_threshold;
-         xmlNodePtr multislaterdet = xmlNewNode(NULL, (const xmlChar*)"multideterminant");
-         if (optDetCoeffs)
-           xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"yes");
-         else
-           xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"no");
+    std::ostringstream cisize, ci_thr;
+    cisize << ci_size;
+    ci_thr << ci_threshold;
+    xmlNodePtr multislaterdet = xmlNewNode(NULL, (const xmlChar*)"multideterminant");
+    if (optDetCoeffs)
+      xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"yes");
+    else
+      xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"no");
 
-         if (!SpinRestricted)  
-         {
-           xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-up");
-           xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-dn");
-         }
-         else
-         {
-           xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-RHF");
-           xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-RHF");
-         }
-      
-         xmlNodePtr detlist = xmlNewNode(NULL, (const xmlChar*)"detlist");
-         xmlNewProp(detlist, (const xmlChar*)"size", (const xmlChar*)cisize.str().c_str());
-         xmlNewProp(detlist, (const xmlChar*)"type", (const xmlChar*)"DETS");
-         xmlNewProp(detlist, (const xmlChar*)"cutoff", (const xmlChar*)ci_thr.str().c_str());
-         xmlNewProp(detlist, (const xmlChar*)"href", (const xmlChar*)h5file.c_str());
-         if (nbexcitedstates != 1)
-         {
-             app_log() << "WARNING!! THE HDF5 Contains CI coefficients for " << nbexcitedstates - 1
-              << ". By default, the ground state coefficients will be loaded ( ext_level=1). If you want to evaluate "
-                 "an excited for which the coefficients are stored in the HDF5 file, modify the value of ext_level "
-                 "between 1 and "
-              << nbexcitedstates << std::endl;
-             xmlNewProp(detlist, (const xmlChar*)"ext_level", (const xmlChar*)"1");
-         }
-         xmlAddChild(multislaterdet,detlist);
-         xmlAddChild(detset,multislaterdet);
+    if (!SpinRestricted)
+    {
+      xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-up");
+      xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-dn");
+    }
+    else
+    {
+      xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-RHF");
+      xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-RHF");
+    }
+
+    xmlNodePtr detlist = xmlNewNode(NULL, (const xmlChar*)"detlist");
+    xmlNewProp(detlist, (const xmlChar*)"size", (const xmlChar*)cisize.str().c_str());
+    xmlNewProp(detlist, (const xmlChar*)"type", (const xmlChar*)"DETS");
+    xmlNewProp(detlist, (const xmlChar*)"cutoff", (const xmlChar*)ci_thr.str().c_str());
+    xmlNewProp(detlist, (const xmlChar*)"href", (const xmlChar*)h5file.c_str());
+    if (nbexcitedstates != 1)
+    {
+      app_log() << "WARNING!! THE HDF5 Contains CI coefficients for " << nbexcitedstates - 1
+                << ". By default, the ground state coefficients will be loaded ( ext_level=1). If you want to evaluate "
+                   "an excited for which the coefficients are stored in the HDF5 file, modify the value of ext_level "
+                   "between 1 and "
+                << nbexcitedstates << std::endl;
+      xmlNewProp(detlist, (const xmlChar*)"ext_level", (const xmlChar*)"1");
+    }
+    xmlAddChild(multislaterdet, detlist);
+    xmlAddChild(detset, multislaterdet);
   }
   else
   {
-         xmlNodePtr slaterdet = xmlNewNode(NULL, (const xmlChar*)"slaterdeterminant");
-         xmlNodePtr udet  = xmlNewNode(NULL, (const xmlChar*)"determinant");
-         xmlNodePtr dndet = xmlNewNode(NULL, (const xmlChar*)"determinant");
-         xmlNewProp(udet, (const xmlChar*)"name", (const xmlChar*)"up");
-         xmlNewProp(dndet, (const xmlChar*)"name", (const xmlChar*)"down");
+    xmlNodePtr slaterdet = xmlNewNode(NULL, (const xmlChar*)"slaterdeterminant");
+    xmlNodePtr udet      = xmlNewNode(NULL, (const xmlChar*)"determinant");
+    xmlNodePtr dndet     = xmlNewNode(NULL, (const xmlChar*)"determinant");
+    xmlNewProp(udet, (const xmlChar*)"name", (const xmlChar*)"up");
+    xmlNewProp(dndet, (const xmlChar*)"name", (const xmlChar*)"down");
 
-         if (!SpinRestricted)  
-         {
-            xmlNewProp(udet, (const xmlChar*)"sposet", (const xmlChar*)"spo-up");
-            xmlNewProp(dndet, (const xmlChar*)"sposet", (const xmlChar*)"spo-dn");
-         }
-         else
-         {
-            xmlNewProp(udet, (const xmlChar*)"sposet", (const xmlChar*)"spo-RHF");
-            xmlNewProp(dndet, (const xmlChar*)"sposet", (const xmlChar*)"spo-RHF");
-         }
-         xmlAddChild(slaterdet,udet);
-         xmlAddChild(slaterdet,dndet);
-         xmlAddChild(detset,slaterdet);
-   }
-   xmlAddChild(wfPtr,detset);
-   if (addJastrow)
-   {
-      std::cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << std::endl;
-      if (NumberOfEls > 1)
-      {
-        xmlAddChild(wfPtr, createJ2());
-      }
-      xmlAddChild(wfPtr, createJ1());
-      if (NumberOfEls > 1)
-      {
-        std::cout << "Adding Three-Body jastrows with rcut=\"5\"" << std::endl;
-        xmlAddChild(wfPtr, createJ3());
-      }
+    if (!SpinRestricted)
+    {
+      xmlNewProp(udet, (const xmlChar*)"sposet", (const xmlChar*)"spo-up");
+      xmlNewProp(dndet, (const xmlChar*)"sposet", (const xmlChar*)"spo-dn");
     }
-  
+    else
+    {
+      xmlNewProp(udet, (const xmlChar*)"sposet", (const xmlChar*)"spo-RHF");
+      xmlNewProp(dndet, (const xmlChar*)"sposet", (const xmlChar*)"spo-RHF");
+    }
+    xmlAddChild(slaterdet, udet);
+    xmlAddChild(slaterdet, dndet);
+    xmlAddChild(detset, slaterdet);
+  }
+  xmlAddChild(wfPtr, detset);
+  if (addJastrow)
+  {
+    std::cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << std::endl;
+    if (NumberOfEls > 1)
+    {
+      xmlAddChild(wfPtr, createJ2());
+    }
+    xmlAddChild(wfPtr, createJ1());
+    if (NumberOfEls > 1)
+    {
+      std::cout << "Adding Three-Body jastrows with rcut=\"5\"" << std::endl;
+      xmlAddChild(wfPtr, createJ3());
+    }
+  }
+
   xmlAddChild(qm_root, wfPtr);
-  
+
   xmlDocSetRootElement(doc, qm_root);
   std::string fname = Title + ".wf" + WFS_name + ".xml";
   xmlSaveFormatFile(fname.c_str(), doc, 1);
@@ -1962,7 +1955,7 @@ void QMCGaussianParserBase::dumpStdInputProd(const std::string& psi_tag, const s
   std::cout << " Generating production input file designed for large calculations." << std::endl;
   std::cout << " Modify according to the accuracy you would like to achieve. " << std::endl;
 
-  std::string fname = Title + ".qmc.in-wf" + WFS_name + ".xml";
+  std::string fname        = Title + ".qmc.in-wf" + WFS_name + ".xml";
   xmlDocPtr doc_input      = xmlNewDoc((const xmlChar*)"1.0");
   xmlNodePtr qm_root_input = xmlNewNode(NULL, BAD_CAST "simulation");
 

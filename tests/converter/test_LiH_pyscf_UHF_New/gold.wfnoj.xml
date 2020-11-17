@@ -5,11 +5,13 @@
       <basisset name="LCAOBSet" key="GTO" transform="yes">
         <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
       </basisset>
-      <sposet basisset="LCAOBSet" name="spo-up" size="19" spindataset="0">
+      <sposet basisset="LCAOBSet" name="spo-up" size="19">
         <occupation mode="ground"/>
+        <coefficient spindataset="0"/>
       </sposet>
-      <sposet basisset="LCAOBSet" name="spo-dn" size="19" spindataset="1">
+      <sposet basisset="LCAOBSet" name="spo-dn" size="19">
         <occupation mode="ground"/>
+        <coefficient spindataset="1"/>
       </sposet>
     </sposet_collection>
     <determinantset>

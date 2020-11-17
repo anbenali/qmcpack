@@ -5,8 +5,9 @@
       <basisset name="LCAOBSet" key="GTO" transform="yes">
         <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
       </basisset>
-      <sposet basisset="LCAOBSet" name="spo-RHF" size="36" spindataset="0">
+      <sposet basisset="LCAOBSet" name="spo-RHF" size="36">
         <occupation mode="ground"/>
+        <coefficient spindataset="0"/>
       </sposet>
     </sposet_collection>
     <determinantset>
