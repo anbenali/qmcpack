@@ -250,7 +250,6 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
   const size_t noffset                 = Dets[det_id]->FirstIndex;
 
   PsiValueType psi(0);
-///OFFLOAD HERE  
   auto Num = Dets[det_id]->NumDets;
   double *foo = C_otherDs[det_id].data();
 
