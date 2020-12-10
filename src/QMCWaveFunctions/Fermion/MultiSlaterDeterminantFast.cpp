@@ -251,6 +251,9 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
 
   PsiValueType psi(0);
 ///OFFLOAD HERE
+#ifdef ENABLE_OFFLOAD
+
+#endif
   for (size_t i = 0; i < Dets[det_id]->NumDets; i++)
   {
     psi += detValues0[i] * C_otherDs[det_id][i];
