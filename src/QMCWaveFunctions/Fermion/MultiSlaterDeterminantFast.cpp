@@ -250,15 +250,20 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
   const size_t noffset                 = Dets[det_id]->FirstIndex;
 
   PsiValueType psi(0);
-///OFFLOAD HERE
-#ifdef ENABLE_OFFLOAD
 
-#endif
+
+///OFFLOAD HERE
+//#ifdef ENABLE_OFFLOAD
+//#pragma omp target parallel for reduction (+psi) map(tofrom:detValues0[0:Dets[det_id]->NumDets]) map(tofrom:C_otherDs[det_id][0:Dets[det_id]->NumDets]) 
+//#else
+//#pragma omp parallel for reduction (+psi)
+//#endif
   for (size_t i = 0; i < Dets[det_id]->NumDets; i++)
-  {
     psi += detValues0[i] * C_otherDs[det_id][i];
+
+  for (size_t i = 0; i < Dets[det_id]->NumDets; i++)
     g_at += C_otherDs[det_id][i] * grads(i, iat - noffset);
-  }
+
   return psi;
 }
 
@@ -306,7 +311,10 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl(Parti
   // psi=Det_Coeff[i]*Det_Value[unique_det_up]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
   // Since only one electron group is moved at the time, identified by det_id, We precompute:
   // C_otherDs[det_id][i]=Det_Coeff[i]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
-  for (size_t i = 0; i < Dets[det_id]->NumDets; i++)
+
+  size_t size=Dets[det_id]->NumDets;
+  //#pragma omp target teams distribute parallel for map(to: detValues0[0:size],C_otherDs[det_id][0:size]) map(from: psi[0:size])
+  for (size_t i = 0; i < size; i++)
     psi += detValues0[i] * C_otherDs[det_id][i];
 
   return psi;
