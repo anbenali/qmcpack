@@ -250,17 +250,14 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
   const size_t noffset                 = Dets[det_id]->FirstIndex;
 
   PsiValueType psi(0);
+  auto Num = Dets[det_id]->NumDets;
+  double *foo = C_otherDs[det_id].data();
 
-
-///OFFLOAD HERE
-//#ifdef ENABLE_OFFLOAD
-//#pragma omp target parallel for reduction (+psi) map(tofrom:detValues0[0:Dets[det_id]->NumDets]) map(tofrom:C_otherDs[det_id][0:Dets[det_id]->NumDets]) 
-//#else
-//#pragma omp parallel for reduction (+psi)
-//#endif
+  #pragma omp target parallel for reduction(+:psi) map(tofrom: detValues0[0:Num]) map(tofrom: foo[0:Num])
   for (size_t i = 0; i < Dets[det_id]->NumDets; i++)
-    psi += detValues0[i] * C_otherDs[det_id][i];
-
+  {
+    psi += detValues0[i] * foo[i];
+  }
   for (size_t i = 0; i < Dets[det_id]->NumDets; i++)
     g_at += C_otherDs[det_id][i] * grads(i, iat - noffset);
 
