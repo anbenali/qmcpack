@@ -19,6 +19,8 @@
  */
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "Numerics/MatrixOperators.h"
+#include "Platforms/OMPTarget/ompBLAS.hpp"
+#include "Platforms/OMPTarget/ompReduction.hpp"
 
 namespace qmcplusplus
 {
@@ -247,9 +249,17 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(ParticleSet& P, int iat)
 
 void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(ParticleSet& P, int iat)
 {
+  // DO ME!!! HERE!!!!
+  //
+  //
+  //
+
+
+
+
   UpdateMode = ORB_PBYP_PARTIAL;
   evalOrb1Timer.start();
-  Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
+  Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV); // DO NOT OFFLOAD
   evalOrb1Timer.stop();
   WorkingIndex = iat - FirstIndex;
   if (NumPtcls == 1)
@@ -280,7 +290,8 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(ParticleSet& P, int 
       ratioGradRef += psiMinv_temp(i, WorkingIndex) * dpsiV[*it];
       it++;
     }
-    ValueType ratioRef                            = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
+
+    ValueType ratioRef                            = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex); //Blas dot product
     new_grads(ReferenceDeterminant, WorkingIndex) = ratioGradRef * detValues[ReferenceDeterminant];
     new_detValues[ReferenceDeterminant]           = ratioRef * detValues[ReferenceDeterminant];
     InverseUpdateByColumn(psiMinv_temp, psiV_temp, workV1, workV2, WorkingIndex, ratioRef);
@@ -304,7 +315,45 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(ParticleSet& P, int 
       it       = confgList[ReferenceDeterminant].occup.begin();
       for (size_t i = 0; i < NumPtcls; i++)
         psiV_temp[i] = dpsiV[*(it++)][idim];
-      InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, WorkingIndex, ratioGradRef[idim]);
+
+      //InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, WorkingIndex, ratioGradRef[idim]);
+
+       ValueType* restrict pinv=dpsiMinv.data();
+       const ValueType* restrict tv= psiV_temp.data();
+       int m=dpsiMinv.rows();
+       int colchanged=WorkingIndex;
+       ValueType c_ratio=ratioGradRef[idim];
+       ValueType* restrict temp=workV1.data();
+       ValueType* restrict rcopy=workV2.data();
+      
+       int success =0;
+       int dummy_handle  = 0;
+
+       const ValueType cone(1);
+       c_ratio = cone / c_ratio;
+        
+       app_log()<<"HERE!!!!   m="<<m<<"  psiMinv.size()="<<dpsiMinv.size()<< "   workV1.size()=  "<<workV1.size()<<std::endl;
+
+       PRAGMA_OFFLOAD("omp target data map(always, tofrom: tv[:m]) \
+                    map(always, tofrom: pinv[:dpsiMinv.size()]) \
+                    map(always, tofrom: temp[:workV1.size()]) \
+                    use_device_ptr(tv, pinv, temp)")
+      {
+          success = ompBLAS::gemv(dummy_handle, 'T', 1, 1, c_ratio, pinv, 1, tv, 1, ValueType(), temp, 1);
+      }
+
+
+       APP_ABORT(success);
+
+
+       temp[colchanged] = cone - c_ratio;
+       BLAS::copy(m, pinv + colchanged, m, rcopy, 1);
+       BLAS::ger(m, m, -1.0, temp, 1, rcopy, 1, pinv, m);
+
+
+
+
+
       for (size_t i = 0; i < NumOrbitals; i++)
         TpsiM(i, WorkingIndex) = dpsiV[i][idim];
       ExtraStuffTimer.stop();

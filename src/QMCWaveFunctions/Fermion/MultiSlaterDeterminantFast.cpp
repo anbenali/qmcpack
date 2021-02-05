@@ -253,15 +253,48 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
   auto Num = Dets[det_id]->NumDets;
   double *foo = C_otherDs[det_id].data();
 
-  #pragma omp target parallel for reduction(+:psi) map(tofrom: detValues0[0:Num]) map(tofrom: foo[0:Num])
+  std::vector<ValueType> Grads_copy0;
+  std::vector<ValueType> Grads_copy1;
+  std::vector<ValueType> Grads_copy2;
+
+  std::vector<ValueType> gat_copy;
+  gat_copy.push_back(g_at[0]);
+  gat_copy.push_back(g_at[1]);
+  gat_copy.push_back(g_at[2]);
+
+
   for (size_t i = 0; i < Dets[det_id]->NumDets; i++)
   {
-    psi += detValues0[i] * foo[i];
+      Grads_copy0.push_back(grads(i, iat - noffset)[0]);
+      Grads_copy1.push_back(grads(i, iat - noffset)[1]);
+      Grads_copy2.push_back(grads(i, iat - noffset)[2]);
+  //    app_log()<<grads(i, iat - noffset)<<std::endl;
   }
-  for (size_t i = 0; i < Dets[det_id]->NumDets; i++)
-    g_at += C_otherDs[det_id][i] * grads(i, iat - noffset);
+ 
+  ValueType *Grads_copy0_ptr=Grads_copy0.data();
+  ValueType *Grads_copy1_ptr=Grads_copy1.data();
+  ValueType *Grads_copy2_ptr=Grads_copy2.data();
+  ValueType *g_at_ptr=gat_copy.data();
 
-  return psi;
+
+
+
+  #pragma omp target map(tofrom: detValues0[0:Num]) map(tofrom: foo[0:Num])  map(tofrom: Grads_copy0_ptr[0:Num]) map(tofrom: Grads_copy1_ptr[0:Num]) map(tofrom: Grads_copy2_ptr[0:Num]) \
+                     reduction(+:psi) reduction(+:g_at_ptr[0]) reduction(+:g_at_ptr[1]) reduction(+:g_at_ptr[2])
+  #pragma omp teams distribute parallel for
+  for (size_t i = 0; i < Dets[det_id]->NumDets; i++)
+  {
+    psi         += foo[i] * detValues0[i];
+    g_at_ptr[0] += foo[i] * Grads_copy0_ptr[i]; 
+    g_at_ptr[1] += foo[i] * Grads_copy1_ptr[i]; 
+    g_at_ptr[2] += foo[i] * Grads_copy2_ptr[i]; 
+  }
+     g_at[0]=   g_at_ptr[0];
+     g_at[1]=   g_at_ptr[1];
+     g_at[2]=   g_at_ptr[2];
+
+
+ return psi;
 }
 
 WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet& P, int iat)
@@ -308,7 +341,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl(Parti
   // psi=Det_Coeff[i]*Det_Value[unique_det_up]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
   // Since only one electron group is moved at the time, identified by det_id, We precompute:
   // C_otherDs[det_id][i]=Det_Coeff[i]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
-
+  
   size_t size=Dets[det_id]->NumDets;
   //#pragma omp target teams distribute parallel for map(to: detValues0[0:size],C_otherDs[det_id][0:size]) map(from: psi[0:size])
   for (size_t i = 0; i < size; i++)
@@ -826,6 +859,7 @@ void MultiSlaterDeterminantFast::prepareGroup(ParticleSet& P, int ig)
     C_otherDs[ig][(*C2node)[ig][i]] += product;
   }
 }
+
 
 
 } // namespace qmcplusplus

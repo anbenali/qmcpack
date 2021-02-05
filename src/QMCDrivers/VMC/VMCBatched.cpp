@@ -83,6 +83,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
     //This generates an entire steps worth of deltas.
     step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());
 
+
     // up and down electrons are "species" within qmpack
     for (int ig = 0; ig < step_context.get_num_groups(); ++ig) //loop over species
     {
@@ -91,6 +92,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       RealType sqrttau     = std::sqrt(tauovermass);
       int start_index      = step_context.getPtclGroupStart(ig);
       int end_index        = step_context.getPtclGroupEnd(ig);
+      TrialWaveFunction::flex_prepareGroup(crowd.get_walker_twfs(), crowd.get_walker_elecs(),ig);
       for (int iat = start_index; iat < end_index; ++iat)
       {
         // step_context.deltaRsBegin returns an iterator to a flat series of PosTypes
