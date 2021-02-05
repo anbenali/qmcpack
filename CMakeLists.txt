@@ -186,8 +186,6 @@ OPTION(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
 # So the dependency must be explicitly specified with USE_OBJECT_TARGET.
 CMAKE_DEPENDENT_OPTION(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
 
-SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fiopenmp -fopenmp-targets=spir64")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fiopenmp -fopenmp-targets=spir64")
 
 IF(USE_OBJECT_TARGET)
    IF(${CMAKE_VERSION} VERSION_LESS "3.14.0")
