@@ -318,15 +318,15 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet
   return grad_iat;
 }
 
-WaveFunctionComponent::GradType MultiSlaterDeterminantFast::mw_evalGrad(const RefVector<WaveFunctionComponent>& WFC_list, const RefVector<ParticleSet>& P_list, int iat)
+void MultiSlaterDeterminantFast::mw_evalGrad(const RefVector<WaveFunctionComponent>& WFC_list, const RefVector<ParticleSet>& P_list, int iat,std::vector<GradType>& grad_now)
 {
 
-  if (usingBF)
-  {
-    APP_ABORT("Fast MSD+BF: evalGrad not implemented. \n");
-  }
+  //if (usingBF)
+ // {
+ //   APP_ABORT("Fast MSD+BF: evalGrad not implemented. \n");
+  //}
 
-  ScopedTimer local_timer(&MWEvalGradTimer);
+  //ScopedTimer local_timer(&MWEvalGradTimer);
   app_log()<<"I AM HERE!!!! WAKE ME UP!!!i 11111111111"<<std::endl; 
 
   APP_ABORT("0");
