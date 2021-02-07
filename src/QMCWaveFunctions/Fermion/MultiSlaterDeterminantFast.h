@@ -51,7 +51,7 @@ class MultiSlaterDeterminantFast : public WaveFunctionComponent
 {
 public:
   void registerTimers();
-  NewTimer &RatioTimer, &EvalGradTimer, &RatioGradTimer, &PrepareGroupTimer, &UpdateTimer;
+  NewTimer &RatioTimer, &EvalGradTimer, &MWEvalGradTimer,  &RatioGradTimer, &PrepareGroupTimer, &UpdateTimer;
   NewTimer &AccRejTimer, &EvaluateTimer;
 
   typedef SPOSet* SPOSetPtr;
@@ -106,6 +106,8 @@ public:
   void prepareGroup(ParticleSet& P, int ig) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
+  GradType mw_evalGrad(const RefVector<WaveFunctionComponent>& WFC_list, const RefVector<ParticleSet>& P_list, int iat,std::vector<GradType>& grad_now); 
+
   PsiValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
   PsiValueType evalGrad_impl_no_precompute(ParticleSet& P, int iat, bool newpos, GradType& g_at);
 

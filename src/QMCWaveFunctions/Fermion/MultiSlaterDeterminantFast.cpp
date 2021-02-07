@@ -25,6 +25,7 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
     : WaveFunctionComponent("MultiSlaterDeterminantFast"),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
       EvalGradTimer(*timer_manager.createTimer(ClassName + "::evalGrad")),
+      MWEvalGradTimer(*timer_manager.createTimer(ClassName + "::mwevalGrad")),
       RatioGradTimer(*timer_manager.createTimer(ClassName + "::ratioGrad")),
       PrepareGroupTimer(*timer_manager.createTimer(ClassName + "::prepareGroup")),
       UpdateTimer(*timer_manager.createTimer(ClassName + "::updateBuffer")),
@@ -316,6 +317,30 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet
   return grad_iat;
 }
 
+WaveFunctionComponent::GradType MultiSlaterDeterminantFast::mw_evalGrad(const RefVector<WaveFunctionComponent>& WFC_list, const RefVector<ParticleSet>& P_list, int iat, std::vector<GradType>& grad_now)
+{
+
+  if (usingBF)
+  {
+    APP_ABORT("Fast MSD+BF: evalGrad not implemented. \n");
+  }
+
+  ScopedTimer local_timer(&MWEvalGradTimer);
+  app_log()<<"I AM HERE!!!! WAKE ME UP!!!i 11111111111"<<std::endl; 
+
+  APP_ABORT("0");
+/*
+  GradType grad_iat;
+  PsiValueType psi;
+  if (use_pre_computing_)
+    psi = evalGrad_impl(P, iat, false, grad_iat);
+  else
+    psi = evalGrad_impl_no_precompute(P, iat, false, grad_iat);
+
+  grad_iat *= (PsiValueType(1.0) / psi);
+  return grad_iat;
+*/
+}
 WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   if (usingBF)
@@ -859,6 +884,7 @@ void MultiSlaterDeterminantFast::registerTimers()
 {
   RatioTimer.reset();
   EvalGradTimer.reset();
+  MWEvalGradTimer.reset();
   RatioGradTimer.reset();
   PrepareGroupTimer.reset();
   UpdateTimer.reset();
