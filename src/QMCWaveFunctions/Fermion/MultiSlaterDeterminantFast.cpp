@@ -266,7 +266,12 @@ void  MultiSlaterDeterminantFast::mw_evalGrad_impl(const RefVector<WaveFunctionC
 {
 
   const int det_id = getDetID(iat);
-  const int nw= WFC_list.size(); 
+  const int nw= WFC_list.size();
+
+
+  vector<ValueType*> det_value_ptr_list;
+  vector<ValueType*> C_otherDs_ptr_list;
+
   for (size_t iw=0; iw<nw; iw++)
   {
     auto& det          = static_cast<MultiSlaterDeterminantFast&>(WFC_list[iw].get());
@@ -274,11 +279,42 @@ void  MultiSlaterDeterminantFast::mw_evalGrad_impl(const RefVector<WaveFunctionC
       det.Dets[det_id]->evaluateDetsAndGradsForPtclMove(P_list[iw], iat);
     else
       det.Dets[det_id]->evaluateGrads(P_list[iw], iat);
+
+    const ValueType* restrict detValues0 = Dets[det_id]->new_detValues.data() : Dets[det_id]->detValues.data();
+    #omp target enter data map(to:detValues0[:ndets]) //transfer content to device
+    det_value_ptr_list.push_back(getOffloadDevicePtr(detValues0));
+
+    //transfer C_otherDs
+    auto* C_otherDs_ptr = C_otherDs[det_id].data();
+    C_otherDs_ptr_list.push_back(getOffloadDevicePtr(C_otherDs_ptr))
   }
+
+  std::vector<PsiValueType> psi_list(nw, 0);
+  auto* psi_list_ptr = psi_list.data();
+  auto*  C_otherDs_ptr_list_ptr = C_otherDs_ptr_list.data();
+
+  auto* det_value_ptr_list_ptr = det_value_ptr_list.data();
+  auto ndets = Dets[det_id]->NumDets;
+  #pragma omp target teams distribute map(from: psi_list[:nw], to: det_value_ptr_list_ptr[:nw], C_otherDs_ptr_list_ptr[:nw])
+  for (size_t iw=0; iw<nw; iw++)
+  {
+    psi_local =0;
+    #pragma omp parallel for reduction(+:psi_local)
+    for (size_t i = 0; i < ndets; i++)
+    {
+      psi_local += det_value_ptr_list_ptr[iw][i] * C_otherDs_ptr_list_ptr[iw][i];
+    }
+    psi_list_ptr[iw] = psi_local;
+  }
+  
+  for (size_t iw=0; iw<nw; iw++)
+  {
+    #omp target exit data map(delete:detValues0[:ndets]) //transfer content to device
+  }
+
   APP_ABORT("in mw_evalGrad_impl");
   /* 
   const GradMatrix_t& grads            = (newpos) ? Dets[det_id]->new_grads : Dets[det_id]->grads;
-  const ValueType* restrict detValues0 = (newpos) ? Dets[det_id]->new_detValues.data() : Dets[det_id]->detValues.data();
   const size_t noffset                 = Dets[det_id]->FirstIndex;
 
   PsiValueType psi(0);
