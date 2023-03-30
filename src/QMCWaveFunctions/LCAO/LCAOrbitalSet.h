@@ -30,6 +30,13 @@ namespace qmcplusplus
 struct LCAOrbitalSet : public SPOSet
 {
 public:
+  NewTimer &evalVGLGemm;
+  NewTimer &evalVGLcopy;
+  NewTimer &evalVGLidentity;
+  NewTimer &evalVGL;
+  NewTimer &evalVGLcopyIdentity;
+  NewTimer &evalVGLgemmOnly;
+  NewTimer &evalVGLDetRatioGrads;
   using basis_type = SoaBasisSetBase<ValueType>;
   using vgl_type   = basis_type::vgl_type;
   using vgh_type   = basis_type::vgh_type;
