@@ -411,7 +411,9 @@ void DiracDeterminant<DU_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std
   }
   {
     ScopedTimer local_timer(SPOVTimer);
+    app_log()<<"DetsAnd Ratios Called from Here"<<std::endl;
     Phi->evaluateDetRatios(VP, psiV, invRow, ratios);
+    app_log()<<"End of DetsAnd Ratios Called from Here"<<std::endl;
   }
 }
 

@@ -78,6 +78,10 @@ public:
 
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) final;
 
+  void mw_evaluateValue_Virtual(const RefVectorWithLeader<SPOSet>& spo_list,
+                        const RefVectorWithLeader<VirtualParticleSet>& vp_list,
+                        const RefVector<ValueVector>& psi_v_list) const ;
+
   void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
                         const RefVectorWithLeader<ParticleSet>& P_list,
                         int iat,
