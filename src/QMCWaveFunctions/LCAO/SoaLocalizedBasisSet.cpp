@@ -13,6 +13,7 @@
 #include <memory>
 #include "SoaLocalizedBasisSet.h"
 #include "Particle/DistanceTable.h"
+
 #include "SoaAtomicBasisSet.h"
 #include "MultiQuinticSpline1D.h"
 #include "MultiFunctorAdapter.h"
@@ -197,6 +198,31 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGHGH(const ParticleSet& P, int ia
   }
 }
 
+
+template<class COT, typename ORBT>
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateV_mvp(const RefVectorWithLeader<const VirtualParticleSet>& vp_list,  OffloadMWVArray& vals)
+{
+	
+  const size_t nVPs= vals.size(0);
+/*
+  const auto& IonID(ions_.GroupID);
+  const auto& coordR  = P.activeR(iat);
+  const auto& d_table = P.getDistTableAB(myTableIndex);
+  const auto& dist    = (P.getActivePtcl() == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+  const auto& displ   = (P.getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
+
+  PosType Tv;
+  for (int c = 0; c < NumCenters; c++)
+  {
+    Tv[0] = (ions_.R[c][0] - coordR[0]) - displ[c][0];
+    Tv[1] = (ions_.R[c][1] - coordR[1]) - displ[c][1];
+    Tv[2] = (ions_.R[c][2] - coordR[2]) - displ[c][2];
+    LOBasisSet[IonID[c]]->evaluateV(P.getLattice(), dist[c], displ[c], vals + BasisOffset[c], Tv);
+  }
+  */
+}
+
+
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals)
 {
@@ -212,9 +238,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateV(const ParticleSet& P, int iat, O
     Tv[0] = (ions_.R[c][0] - coordR[0]) - displ[c][0];
     Tv[1] = (ions_.R[c][1] - coordR[1]) - displ[c][1];
     Tv[2] = (ions_.R[c][2] - coordR[2]) - displ[c][2];
-    std::cout<<"I am Here"<<std::endl;
     LOBasisSet[IonID[c]]->evaluateV(P.getLattice(), dist[c], displ[c], vals + BasisOffset[c], Tv);
-    //APP_ABORT("Yes\n");
   }
 }
 
@@ -225,6 +249,21 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue(const RefVectorWithLeader
 {
   for (size_t iw = 0; iw < P_list.size(); iw++)
     evaluateV(P_list[iw], iat, v.data_at(iw, 0));
+}
+
+
+template<class COT, typename ORBT>
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue_mvp(const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                                       OffloadMWVArray& v)
+{
+  size_t index=0;
+  for (size_t iw = 0; iw < vp_list.size(); iw++)
+     for (int iat=0; iat <vp_list[iw].getTotalNum();iat++)
+        evaluateV(vp_list[iw], iat, v.data_at(index++, 0));
+
+
+//        mw_evaluateV_mvp(vp_list,  v);
+
 }
 
 template<class COT, typename ORBT>

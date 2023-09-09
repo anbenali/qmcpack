@@ -131,16 +131,12 @@ void LCAOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& ps
 {
   if (Identity)
   { //PAY ATTENTION TO COMPLEX
-    app_log()<<"Anouar 0"<<std::endl;
     myBasisSet->evaluateV(P, iat, psi.data());
-    app_log()<<"Anouar 1"<<std::endl;
   }
   else
   {
     Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
-    app_log()<<"Anouar 2"<<std::endl;
     myBasisSet->evaluateV(P, iat, vTemp.data());
-    app_log()<<"Anouar 3"<<std::endl;
     assert(psi.size() <= OrbitalSetSize);
     ValueMatrix C_partial_view(C->data(), psi.size(), BasisSetSize);
     MatrixOperators::product(C_partial_view, vTemp, psi);
@@ -469,25 +465,65 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
                  requested_orb_size);
     }
   }
+
 }
 
 void LCAOrbitalSet::mw_evaluateValue_mvp(const RefVectorWithLeader<SPOSet>& spo_list,
-                                     const RefVectorWithLeader<VirtualParticleSet>& vp_list,
-                                     const RefVector<ValueVector>& psi_v_list) const
+                                     const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                     std::vector<std::vector<ValueVector>>& psi_list_mvp) const
 {
   assert(this == &spo_list.getLeader());
   auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
   auto& phi_v      = spo_leader.mw_mem_handle_.getResource().phi_v;
-  phi_v.resize(spo_list.size(), OrbitalSetSize);
+
+  const size_t nVPs= VirtualParticleSet::countVPs(vp_list);
+  phi_v.resize(nVPs, OrbitalSetSize);
 
   mw_evaluateValueImplGEMM_mvp(spo_list, vp_list, phi_v);
 
   const size_t output_size = phi_v.size(1);
-  const size_t nw          = phi_v.size(0);
-
+  const size_t nw          = spo_list.size();
+  size_t index=0; 
   for (int iw = 0; iw < nw; iw++)
-    std::copy_n(phi_v.data_at(iw, 0), output_size, psi_v_list[iw].get().data());
+	  for (int ivp=0; ivp<vp_list[iw].getTotalNum();ivp++) 
+                std::copy_n(phi_v.data_at(index++, 0), output_size, psi_list_mvp[iw][ivp].data());
+   
 }
+
+void LCAOrbitalSet::mw_evaluateValueImplGEMM_mvp(const RefVectorWithLeader<SPOSet>& spo_list,
+                                             const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                             OffloadMWVArray& phi_v) const
+{
+  assert(this == &spo_list.getLeader());
+  auto& spo_leader = spo_list.getCastedLeader<LCAOrbitalSet>();
+  //const size_t nw  = spo_list.size();
+  auto& basis_v_mw = spo_leader.mw_mem_handle_.getResource().basis_v_mw;
+  //Splatter basis_v
+  const size_t nVPs= phi_v.size(0);
+  basis_v_mw.resize(nVPs, BasisSetSize);
+
+  myBasisSet->mw_evaluateValue_mvp(vp_list,  basis_v_mw);
+
+  if (Identity)
+  {
+    std::copy_n(basis_v_mw.data_at(0, 0), OrbitalSetSize * nVPs, phi_v.data_at(0, 0));
+  }
+  else
+  {
+    const size_t requested_orb_size = phi_v.size(1);
+    assert(requested_orb_size <= OrbitalSetSize);
+    ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
+    BLAS::gemm('T', 'N',
+               requested_orb_size, // MOs
+               nVPs,    // walkers * Virtual Particles
+               BasisSetSize,       // AOs
+               1, C_partial_view.data(), BasisSetSize, basis_v_mw.data(), BasisSetSize, 0, phi_v.data(),
+               requested_orb_size);
+  }
+   
+}
+
+
 
 
 void LCAOrbitalSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
@@ -546,25 +582,23 @@ void LCAOrbitalSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
                                          std::vector<std::vector<ValueType>>& ratios_list) const
 {
   const size_t nw = spo_list.size();
-
-  
-
   std::vector<std::vector<ValueVector>> psi_list_mvp;
-
-  mw_evaluateValue_mvp(vp_list, psi_list_mvp)
-
-
-
-
+  
+  psi_list_mvp.resize(nw);
   for (size_t iw = 0; iw < nw; iw++)
   {
-    for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
-    {
-      app_log()<<"Anouar 5"<<std::endl;
-      spo_list[iw].evaluateValue(vp_list[iw], iat, psi_list[iw]);
-      ratios_list[iw][iat] = simd::dot(psi_list[iw].get().data(), invRow_ptr_list[iw], psi_list[iw].get().size());
-    }
+	  psi_list_mvp[iw].resize(vp_list[iw].getTotalNum());
+          for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
+	        psi_list_mvp[iw][iat].resize(psi_list[iw].get().size());
   }
+               
+  mw_evaluateValue_mvp(spo_list,vp_list, psi_list_mvp);
+
+  ///To be computed on Device through new varuable mw_ratios_list, then copied to ratios_list on host. 
+  for (size_t iw = 0; iw < nw; iw++)
+    for (size_t iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
+      ratios_list[iw][iat] = simd::dot(psi_list_mvp[iw][iat].data(), invRow_ptr_list[iw], psi_list[iw].get().size());
+
 }
 
 void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,

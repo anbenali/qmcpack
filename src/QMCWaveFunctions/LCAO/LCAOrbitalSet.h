@@ -78,9 +78,9 @@ public:
 
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) final;
 
-  void mw_evaluateValue_Virtual(const RefVectorWithLeader<SPOSet>& spo_list,
-                        const RefVectorWithLeader<VirtualParticleSet>& vp_list,
-                        const RefVector<ValueVector>& psi_v_list) const ;
+  void mw_evaluateValue_mvp(const RefVectorWithLeader<SPOSet>& spo_list,
+                        const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                        std::vector<std::vector<ValueVector>>& psi_list_mvp) const ;
 
   void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
                         const RefVectorWithLeader<ParticleSet>& P_list,
@@ -312,6 +312,10 @@ private:
                                 int iat,
                                 OffloadMWVArray& phi_v) const;
 
+  /// packed walker GEMM implementation with multi virtual particle
+  void mw_evaluateValueImplGEMM_mvp(const RefVectorWithLeader<SPOSet>& spo_list,
+                                const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                OffloadMWVArray& phi_v) const;
   struct LCAOMultiWalkerMem;
   ResourceHandle<LCAOMultiWalkerMem> mw_mem_handle_;
   /// timer for basis set

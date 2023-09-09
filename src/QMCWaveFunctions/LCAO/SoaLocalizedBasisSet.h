@@ -116,6 +116,12 @@ public:
    */
   void mw_evaluateValue(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVArray& v) override;
 
+
+
+  void mw_evaluateValue_mvp(const RefVectorWithLeader<const VirtualParticleSet>& vp_list,  OffloadMWVArray& v) override;
+
+
+
   /** compute VGL using packed array with all walkers 
    * @param P_list list of quantum particleset (one for each walker)
    * @param iat active particle
@@ -151,6 +157,8 @@ public:
    * as a phase factor, i.e., exp(i*k*Tv).
    */
   void evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals) override;
+
+  void mw_evaluateV_mvp(const RefVectorWithLeader<const VirtualParticleSet>& vp_list,  OffloadMWVArray&  vals) override;
 
   void evaluateGradSourceV(const ParticleSet& P, int iat, const ParticleSet& ions, int jion, vgl_type& vgl) override;
 

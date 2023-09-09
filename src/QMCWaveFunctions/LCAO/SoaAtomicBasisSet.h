@@ -601,7 +601,6 @@ struct SoaAtomicBasisSet
   template<typename LAT, typename T, typename PosType, typename VT>
   inline void evaluateV(const LAT& lattice, const T r, const PosType& dr, VT* restrict psi, PosType Tv)
   {
-	   app_log()<<"I am here in inner function"<<std::endl;
     int TransX, TransY, TransZ;
 
     PosType dr_new;
@@ -646,7 +645,6 @@ struct SoaAtomicBasisSet
           iter++;
           if (r_new >= Rmax)
             continue;
-
           Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
           MultiRnl.evaluate(r_new, phi_r);
           ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
