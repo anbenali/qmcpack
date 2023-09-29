@@ -471,6 +471,7 @@ class Convert4qmcInput(SimulationInput):
 
     input_codes = '''
         pyscf              
+        orbitals
         qp                 
         gaussian           
         casino             
@@ -489,7 +490,6 @@ class Convert4qmcInput(SimulationInput):
         ion_tag            
         no_jastrow         
         production         
-        orbitals
         multidet
         gridtype
         first
@@ -540,6 +540,7 @@ class Convert4qmcInput(SimulationInput):
 
     input_types = obj(
         app_name           = str, # executable name
+        orbitals           = str, # file path
         pyscf              = str, # file path
         qp                 = str, # file path
         gaussian           = str, # file path
@@ -556,8 +557,7 @@ class Convert4qmcInput(SimulationInput):
         ion_tag            = str, # particeset tag
         no_jastrow         = bool,
         production         = bool,
-        orbitals           = str,
-        multidet           = str,
+        multidet           = str, #file path
         gridtype           = str,
         first              = float,
         last               = float,
@@ -849,8 +849,11 @@ class Convert4qmc(Simulation):
             #end if
         elif isinstance(sim,QuantumPackage):
             self.input_code = 'qp'
+            h5_file=self.input.get('orbitals')
+            if self.input.get('orbitals')==None:
+                h5_file=result.h5file
             if result_name=='orbitals':
-                orbpath = os.path.relpath(result.outfile,self.locdir)
+                orbpath = os.path.join(self.locdir,h5_file)
                 input.orbitals = orbpath
             else:
                 implemented = False

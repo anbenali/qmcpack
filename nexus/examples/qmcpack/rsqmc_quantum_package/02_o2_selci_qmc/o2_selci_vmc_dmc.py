@@ -21,7 +21,7 @@ settings(
 
 # define run details
 qp_job  = job(cores=16,threads=16)
-c4q_job = job(cores=1)
+c4q_job = job(cores=1,serial=True)
 qmc_job = job(cores=16,threads=16)
 
 # read in structure for oxygen dimer
@@ -74,7 +74,7 @@ c4q = generate_convert4qmc(
     identifier   = 'c4q',
     path         = 'O_dimer/selci',
     job          = c4q_job,
-    hdf5         = True,
+    multidet     = 'QP2QMCPACK.h5',
     dependencies = (fci,'orbitals'),
     )
 

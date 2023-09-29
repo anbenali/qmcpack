@@ -148,11 +148,13 @@ class QuantumPackage(Simulation):
     def get_result(self,result_name,sim):
         result = obj()
         rc = self.input.run_control
+        h5file = 'QP2QMCPACK.h5'
         if result_name=='orbitals':
             if rc.run_type=='save_for_qmcpack':
                 result.outfile = os.path.join(self.locdir,self.outfile)
             elif rc.save_for_qmcpack:
-                result.outfile = os.path.join(self.locdir,'{0}_savewf.out'.format(self.identifier))
+                result.outfile = os.path.join(self.locdir,h5file)
+                result.h5file = h5file
             else:
                 self.error("cannot get orbitals\ntracking of save_for_qmcpack is somehow corrupted\nthis is a developer error")
             #end if
