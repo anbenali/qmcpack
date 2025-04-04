@@ -423,6 +423,7 @@ const int nw = wf_list.size();
   }
 
 
+<<<<<<< HEAD
 }
 
 void TWFFastDerivWrapper::computeMDDerivatives_Obs(const std::vector<ValueMatrix>& Minv_Mv,
@@ -954,6 +955,7 @@ void TWFFastDerivWrapper::buildX(const std::vector<ValueMatrix>& Minv,
         }
   }
 }
+<<<<<<< HEAD
 <<<<<<< HEAD
 void TWFFastDerivWrapper::buildIntermediates(const std::vector<ValueMatrix>& Minv,
                                              const std::vector<ValueMatrix>& B,
