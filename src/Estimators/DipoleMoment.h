@@ -27,7 +27,8 @@ namespace qmcplusplus
 class DipoleMoment : public OperatorEstBase
 {
 public:
-  using LatticeType = PtclOnLatticeTraits::ParticleLayout;
+//using LatticeType = PtclOnLatticeTraits::ParticleLayout;
+  using LatticeType = Lattice;
   using RealType    = QMCTraits::RealType;
   using ComplexType = QMCTraits::ComplexType;
   using ValueType   = QMCTraits::ValueType;

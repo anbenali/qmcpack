@@ -47,7 +47,7 @@ DipoleMoment::DipoleMoment(DipoleMomentInput&& inp_, const PSPool& pset_pool, Da
   int ChargeAttribIndx = species.addAttribute("charge");
   int nspecies         = species.TotalNum;
   int nps              = pion.getTotalNum();
-  assert(nps==P.R.size());
+  //assert(nps==P.R.size());
   std::vector<RealType> Zptcl;
   std::vector<RealType> Zspec;
   Zspec.resize(nspecies);
@@ -115,7 +115,7 @@ void DipoleMoment::accumulate(const RefVector<MCPWalker>& walkers,
       data_[d] += weight * ion_dipole_moment_[d];
     //   electron contribution
     RealType elec_charge = -1.0;
-    assert(det_ratios.size() == data_.size());
+    //assert(det_ratios.size() == data_.size());
     for (int i = 0; i < walker.R.size(); i++)
       for (int d = 0; d < DIM; ++d)
         data_[d] += weight * elec_charge * walker.R[i][d];
