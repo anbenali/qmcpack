@@ -28,3 +28,4 @@ doxygen/qmcpack_all.tag
 # Sphinx output
 docs/_build/
 nexus/sphinx_docs/_build/
+*.swp
